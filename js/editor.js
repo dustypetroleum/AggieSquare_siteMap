@@ -2,15 +2,13 @@ let isEditMode = false;
 let currentMapBounds;
 let currentMapId;
 
-// State management for vector drawing
-let placementState = 'none'; // none -> location_placed -> vector_target_set
-let tempMarker; // The photo location
-let tempLine;   // The temporary vector line
+let placementState = 'none'; 
+let tempMarker; 
+let tempLine;   
+let sessionMarkers = [];
 
 const bodyElement = document.body;
 const sidebarForm = document.getElementById('editor-form');
-
-// Inputs/Display elements
 const displayX = document.getElementById('display-x');
 const displayY = document.getElementById('display-y');
 const inputAngle = document.getElementById('edit-angle');
@@ -22,7 +20,6 @@ function initEditor(mapId, bounds) {
     resetEditorWorkflow();
 }
 
-// Workflow Reset
 function resetEditorWorkflow() {
     placementState = 'none';
     if (tempMarker) map.removeLayer(tempMarker);
@@ -33,7 +30,7 @@ function resetEditorWorkflow() {
     sidebarForm.reset();
 }
 
-// Toggle logic
+// Mode Toggling
 function setMode(mode) {
     if (mode === 'edit') {
         isEditMode = true;
@@ -41,7 +38,7 @@ function setMode(mode) {
         bodyElement.classList.add('edit-mode');
         document.getElementById('btn-edit').classList.add('active');
         document.getElementById('btn-view').classList.remove('active');
-        markerLayer.remove(); // Hide view markers while editing
+        markerLayer.remove(); 
     } else {
         isEditMode = false;
         bodyElement.classList.remove('edit-mode');
@@ -49,45 +46,36 @@ function setMode(mode) {
         document.getElementById('btn-view').classList.add('active');
         document.getElementById('btn-edit').classList.remove('active');
         resetEditorWorkflow();
-        markerLayer.addTo(map); // Show view markers
+        markerLayer.addTo(map); 
     }
 }
 
 document.getElementById('btn-edit').addEventListener('click', () => setMode('edit'));
 document.getElementById('btn-view').addEventListener('click', () => setMode('view'));
+document.getElementById('btn-cancel').addEventListener('click', resetEditorWorkflow);
 
-// Vector Calculation (Point A [location] to Point B [target])
+// Vector Math
 function calculateAngle(latlngA, latlngB) {
     const dx = latlngB.lng - latlngA.lng;
-    const dy = latlngB.lat - latlngA.lat; // Leaflet coordinates use (y, x)
-    
-    // Math.atan2 returns radians relative to the x-axis. 
-    // We adjust it for compass-style bearings (0° North).
+    const dy = latlngB.lat - latlngA.lat; 
     const radians = Math.atan2(dx, dy); 
     let degrees = radians * (180 / Math.PI);
-    
-    // Normalize to 0-360
-    degrees = (degrees + 360) % 360;
-    
-    return Math.round(degrees);
+    return Math.round((degrees + 360) % 360);
 }
 
-// Map Click Interaction (State Machine)
+// Map Clicking State Machine
 map.on('click', (e) => {
     if (!isEditMode) return;
 
     if (placementState === 'none') {
-        // Step 1: Place Location Marker
         placementState = 'location_placed';
         
-        // Capture [y, x] pixel coordinates
         tempMarker = L.marker(e.latlng, { draggable: true }).addTo(map);
         tempMarker.bindPopup('Photo Location (Drag to refine)').openPopup();
         
         displayX.textContent = Math.round(e.latlng.lng);
         displayY.textContent = Math.round(e.latlng.lat);
         
-        // Listen for refinement drag
         tempMarker.on('dragend', () => {
              displayX.textContent = Math.round(tempMarker.getLatLng().lng);
              displayY.textContent = Math.round(tempMarker.getLatLng().lat);
@@ -95,20 +83,13 @@ map.on('click', (e) => {
         });
 
     } else if (placementState === 'location_placed') {
-        // Step 2: Click again to define target vector
         placementState = 'vector_target_set';
-        
         if (tempLine) map.removeLayer(tempLine);
         
-        // Draw the visual vector line from A to B
         tempLine = L.polyline([tempMarker.getLatLng(), e.latlng], { color: 'red', dashArray: '5, 10' }).addTo(map);
-        
-        // Calculate the angle
-        const angle = calculateAngle(tempMarker.getLatLng(), e.latlng);
-        inputAngle.value = angle;
+        inputAngle.value = calculateAngle(tempMarker.getLatLng(), e.latlng);
         
     } else if (placementState === 'vector_target_set') {
-        // Re-clicking map resets vector definition phase
         resetVectorStep();
     }
 });
@@ -119,7 +100,7 @@ function resetVectorStep() {
      inputAngle.value = '';
 }
 
-// 5. Data Export (Saving)Workflow
+// Add Point to Batch
 sidebarForm.addEventListener('submit', (e) => {
     e.preventDefault();
     if (!tempMarker || placementState !== 'vector_target_set') {
@@ -127,8 +108,8 @@ sidebarForm.addEventListener('submit', (e) => {
         return;
     }
 
-    // Compile the final data point
     const markerData = {
+        session_id: Date.now(),
         map_id: currentMapId,
         type: document.getElementById('edit-type').value,
         x: Math.round(tempMarker.getLatLng().lng),
@@ -136,16 +117,37 @@ sidebarForm.addEventListener('submit', (e) => {
         orientation: parseInt(inputAngle.value),
         field_of_view: parseInt(inputFov.value),
         url: document.getElementById('edit-url').value,
-        title: "New Photo Location" // Allow user to edit this too
+        title: "New Photo Location" 
     };
 
-    // Output the JSON snippet so the user can copy/paste it into data/locations.json
-    console.log("MARKER DATA JSON:");
-    console.log(JSON.stringify(markerData, null, 2));
-    alert("Data output to console. Copy the JSON snippet there and paste it into data/locations.json.");
-// Cancel button listener
-document.getElementById('btn-cancel').addEventListener('click', () => {
+    sessionMarkers.push(markerData);
+    document.getElementById('session-count').textContent = sessionMarkers.length;
+
+    const finalizedMarker = createDirectionalMarker(
+        [markerData.y, markerData.x], 
+        markerData.orientation, 
+        markerData.field_of_view, 
+        markerData.title
+    );
+    finalizedMarker.session_id = markerData.session_id; 
+    finalizedMarker.addTo(markerLayer);
+
     resetEditorWorkflow();
 });
 
+// Download Batch Array
+document.getElementById('btn-download-batch').addEventListener('click', () => {
+    if (sessionMarkers.length === 0) {
+        alert("No points added to the session yet.");
+        return;
+    }
+
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(sessionMarkers, null, 2));
+    const downloadAnchorNode = document.createElement('a');
+    downloadAnchorNode.setAttribute("href", dataStr);
+    downloadAnchorNode.setAttribute("download", `map_locations_${Date.now()}.json`);
+    
+    document.body.appendChild(downloadAnchorNode); 
+    downloadAnchorNode.click();
+    downloadAnchorNode.remove();
 });

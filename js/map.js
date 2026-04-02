@@ -1,4 +1,4 @@
-// --- Configuration for the four provided maps ---
+// Map Configurations (Bounds are [height, width] in pixels)
 const mapConfigs = {
     'lvl1-south': {
         url: 'assets/floorplans/lvl1-south.png',
@@ -22,65 +22,70 @@ const mapConfigs = {
     }
 };
 
-// 1. Initialize Map
+// Initialize Map with Simple CRS
 const map = L.map('map', {
-    crs: L.CRS.Simple, // Crucial for flat images
-    minZoom: -1,
+    crs: L.CRS.Simple,
+    minZoom: -2,
     maxZoom: 3
 });
 
 let currentImageOverlay;
-let markerLayer = L.layerGroup().addTo(map); // Layer to hold clickable photo markers
+let markerLayer = L.layerGroup().addTo(map);
 
-// 2. Map Switching Function
+// Switch Floor Plan
 function switchMap(mapId) {
     const config = mapConfigs[mapId];
     if (!config) return;
 
-    // Clear previous elements
     if (currentImageOverlay) map.removeLayer(currentImageOverlay);
     markerLayer.clearLayers();
 
-    // Add new floorplan
     currentImageOverlay = L.imageOverlay(config.url, config.bounds).addTo(map);
     map.fitBounds(config.bounds);
 
-    // Initialize Edit mode (if defined in editor.js)
     if (typeof initEditor === 'function') {
         initEditor(mapId, config.bounds);
     }
-
-    // Load markers (Mocked data for now, replace with actual fetch later)
-    loadMockMarkers(mapId);
 }
 
-// 3. View Mode Functionality (Markers with FOV visualization)
+// Marker Generator with HTML Popup & Delete Logic
 function createDirectionalMarker(latlng, angle, fov, title) {
     const marker = L.marker(latlng);
-    marker.bindPopup(`<b>${title}</b><br>Facing: ${angle}° (FOV: ${fov}°)`);
+    
+    const popupContent = document.createElement('div');
+    popupContent.innerHTML = `
+        <b>${title}</b><br>Facing: ${angle}° (FOV: ${fov}°)<br>
+        <button class="delete-marker-btn" style="background: #dc3545; color: white; border: none; margin-top: 8px; cursor: pointer; padding: 6px 12px; border-radius: 4px; width: 100%;">Delete Point</button>
+    `;
 
-    // New Right-Click to Delete Logic
-    marker.on('contextmenu', (e) => {
-        // Only allow deletion if the user has toggled Edit Mode on
-        // 'isEditMode' is a global variable from editor.js
-        if (typeof isEditMode !== 'undefined' && isEditMode) {
-            if (confirm(`Delete marker: ${title}?`)) {
-                marker.remove();
-            }
+    marker.bindPopup(popupContent);
+
+    marker.on('popupopen', () => {
+        const delBtn = popupContent.querySelector('.delete-marker-btn');
+        
+        // Only show delete button in edit mode
+        if (typeof isEditMode !== 'undefined' && !isEditMode) {
+            delBtn.style.display = 'none';
+        } else {
+            delBtn.style.display = 'block';
+            
+            delBtn.onclick = () => {
+                if (confirm(`Delete marker: ${title}?`)) {
+                    marker.remove(); 
+                    
+                    // Remove from session array if it exists there
+                    if (typeof sessionMarkers !== 'undefined' && marker.session_id) {
+                        sessionMarkers = sessionMarkers.filter(m => m.session_id !== marker.session_id);
+                        document.getElementById('session-count').textContent = sessionMarkers.length;
+                    }
+                }
+            };
         }
     });
 
     return marker;
 }
 
-// Mock loader (Replace with fetch('data/locations.json') once JSON exists)
-function loadMockMarkers(mapId) {
-    markerLayer.clearLayers();
-    if (mapId === 'lvl1-south') {
-        createDirectionalMarker([600, 800], 90, 60, "South Entry Photo").addTo(markerLayer);
-    }
-}
-
-// 4. Initial Load
+// Initial Load
 document.getElementById('map-selector').addEventListener('change', (e) => switchMap(e.target.value));
-switchMap('lvl1-south'); // Default map
+switchMap('lvl1-south');
