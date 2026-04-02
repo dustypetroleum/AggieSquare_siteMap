@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Venue Map - View/Edit</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="view-mode"> <div id="control-panel">
+        <div class="panel-section">
+            <label for="map-selector">Current Floor:</label>
+            <select id="map-selector">
+                <option value="lvl1-south">Level 1, Lobby South</option>
+                <option value="lvl1-north">Level 1, Lobby North</option>
+                <option value="lvl2-social">Level 2, Social Lab</option>
+                <option value="aggiecommons">Level 1, Aggie Commons</option>
+            </select>
+        </div>
+        <div class="panel-section mode-toggle">
+            <button id="btn-view" class="active">View Mode</button>
+            <button id="btn-edit">Edit Mode</button>
+        </div>
+    </div>
+
+    <div id="map"></div>
+
+    <div id="edit-sidebar">
+        <h3>Add/Edit Photo Location</h3>
+        <p class="instruction">1. Switch to Edit Mode.<br>2. Click the map to place location.</p>
+        
+        <form id="editor-form">
+            <div class="input-group">
+                <label>Photo Type:</label>
+                <select id="edit-type">
+                    <option value="directional">Directional Standard</option>
+                    <option value="panorama">360° Panorama</option>
+                </select>
+            </div>
+            
+            <div class="input-group location-data">
+                <label>X-Coord: <span id="display-x">--</span></label>
+                <label>Y-Coord: <span id="display-y">--</span></label>
+            </div>
+
+            <div class="input-group vector-data">
+                <label>Direction (Angle):</label>
+                <input type="number" id="edit-angle" readonly placeholder="Click map to set target">
+                <button type="button" id="btn-set-vector" class="tool-btn">Set Target Direction</button>
+            </div>
+
+            <div class="input-group">
+                <label>Angle Range (Field of View):</label>
+                <input type="number" id="edit-fov" value="90" min="10" max="360" step="5">
+                <span class="help-text">10° (Narrow) - 360° (Full Circle)</span>
+            </div>
+
+            <div class="input-group">
+                <label>Photo URL/Filename:</label>
+                <input type="text" id="edit-url" placeholder="assets/photos/room101.jpg">
+            </div>
+
+            <button type="submit" id="btn-save">Save Marker (Output Data)</button>
+        </form>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="js/map.js"></script>
+    <script src="js/editor.js"></script>
+</body>
+</html>

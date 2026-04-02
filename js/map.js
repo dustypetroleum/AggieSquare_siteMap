@@ -1,0 +1,81 @@
+// --- Configuration for the four provided maps ---
+const mapConfigs = {
+    'lvl1-south': {
+        url: 'assets/floorplans/lvl1-south.png',
+        // Reminder: Replace [1000, 2000] with the actual [height, width] of the PNG in pixels
+        bounds: [[0, 0], [2236, 1142]], 
+        center: [1118, 571]
+    },
+    'lvl1-north': {
+        url: 'assets/floorplans/lvl1-north.png',
+        bounds: [[0, 0], [2231, 1156]],
+        center: [1115, 578]
+    },
+    'lvl2-social': {
+        url: 'assets/floorplans/lvl2-social.png',
+        bounds: [[0, 0], [2074 , 1135]],
+        center: [1037, 578]
+    },
+    'aggiecommons': {
+        url: 'assets/floorplans/aggiecommons.png',
+        bounds: [[0, 0], [1498, 996]], 
+        center: [749, 498]
+    }
+};
+
+// 1. Initialize Map
+const map = L.map('map', {
+    crs: L.CRS.Simple, // Crucial for flat images
+    minZoom: -1,
+    maxZoom: 3
+});
+
+let currentImageOverlay;
+let markerLayer = L.layerGroup().addTo(map); // Layer to hold clickable photo markers
+
+// 2. Map Switching Function
+function switchMap(mapId) {
+    const config = mapConfigs[mapId];
+    if (!config) return;
+
+    // Clear previous elements
+    if (currentImageOverlay) map.removeLayer(currentImageOverlay);
+    markerLayer.clearLayers();
+
+    // Add new floorplan
+    currentImageOverlay = L.imageOverlay(config.url, config.bounds).addTo(map);
+    map.fitBounds(config.bounds);
+
+    // Initialize Edit mode (if defined in editor.js)
+    if (typeof initEditor === 'function') {
+        initEditor(mapId, config.bounds);
+    }
+
+    // Load markers (Mocked data for now, replace with actual fetch later)
+    loadMockMarkers(mapId);
+}
+
+// 3. View Mode Functionality (Markers with FOV visualization)
+function createDirectionalMarker(latlng, angle, fov, title) {
+    // Basic standard marker for click detection
+    const marker = L.marker(latlng);
+
+    // Advanced Leaflet feature: SVG Field of View visualization
+    // Requires specialized Leaflet plugins or custom JS (demonstrated here simply)
+    // A simplified popup content is used for initial interaction:
+    marker.bindPopup(`<b>${title}</b><br>Facing: ${angle}° (FOV: ${fov}°)`);
+
+    return marker;
+}
+
+// Mock loader (Replace with fetch('data/locations.json') once JSON exists)
+function loadMockMarkers(mapId) {
+    markerLayer.clearLayers();
+    if (mapId === 'lvl1-south') {
+        createDirectionalMarker([600, 800], 90, 60, "South Entry Photo").addTo(markerLayer);
+    }
+}
+
+// 4. Initial Load
+document.getElementById('map-selector').addEventListener('change', (e) => switchMap(e.target.value));
+switchMap('lvl1-south'); // Default map
