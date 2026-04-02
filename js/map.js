@@ -1,3 +1,4 @@
+// 1. Map Configurations
 const mapConfigs = {
     'lvl1-south': { url: 'assets/floorplans/lvl1-south.png', bounds: [[0, 0], [1142, 2236]], center: [571, 1118] },
     'lvl1-north': { url: 'assets/floorplans/lvl1-north.png', bounds: [[0, 0], [1156, 2231]], center: [578, 1115] },
@@ -5,6 +6,7 @@ const mapConfigs = {
     'aggiecommons': { url: 'assets/floorplans/aggiecommons.png', bounds: [[0, 0], [996, 1498]], center: [498, 749] }
 };
 
+// 2. Initialize Leaflet Map
 const map = L.map('map', { crs: L.CRS.Simple, minZoom: -2, maxZoom: 3 });
 
 let currentImageOverlay;
@@ -23,10 +25,9 @@ function switchMap(mapId) {
     if (typeof initEditor === 'function') initEditor(mapId, config.bounds);
 }
 
-// Global variable to hold the Pannellum instance
+// 3. Marker & Popup Logic
 let viewerInstance = null;
 
-// Updated Marker Generator (Now accepts url and type)
 function createDirectionalMarker(latlng, angle, fov, title, comments, url, type) {
     const marker = L.circleMarker(latlng, { radius: 6, color: '#ffffff', weight: 2, fillColor: '#007bff', fillOpacity: 0.9 });
     
@@ -46,7 +47,6 @@ function createDirectionalMarker(latlng, angle, fov, title, comments, url, type)
         const delBtn = popupContent.querySelector('.delete-marker-btn');
         const viewBtn = popupContent.querySelector('.view-photo-btn');
         
-        // Handle Delete Button Visibility
         if (typeof isEditMode !== 'undefined' && !isEditMode) {
             delBtn.style.display = 'none';
         } else {
@@ -62,7 +62,6 @@ function createDirectionalMarker(latlng, angle, fov, title, comments, url, type)
             };
         }
 
-        // Handle View Button Logic
         viewBtn.onclick = () => {
             openPhotoViewer({ title, url, type, fov });
         };
@@ -71,13 +70,12 @@ function createDirectionalMarker(latlng, angle, fov, title, comments, url, type)
     return marker;
 }
 
-// Modal & Pannellum Logic
+// 4. Modal & Viewer Rendering
 function openPhotoViewer(data) {
     const modal = document.getElementById('photo-modal');
     const container = document.getElementById('viewer-container');
     document.getElementById('modal-title').textContent = data.title || 'Photo View';
 
-    // Clear previous viewer instances
     container.innerHTML = '';
     if (viewerInstance) {
         viewerInstance.destroy();
@@ -91,12 +89,11 @@ function openPhotoViewer(data) {
             "type": "equirectangular",
             "panorama": data.url,
             "autoLoad": true,
-            "haov": data.fov >= 360 ? 360 : data.fov, // Restricts panning for partial panos
+            "haov": data.fov >= 360 ? 360 : data.fov,
             "minYaw": data.fov >= 360 ? -180 : -(data.fov / 2),
             "maxYaw": data.fov >= 360 ? 180 : (data.fov / 2)
         });
     } else {
-        // Standard directional photo
         const img = document.createElement('img');
         img.src = data.url;
         img.className = 'standard-img';
@@ -105,7 +102,7 @@ function openPhotoViewer(data) {
     }
 }
 
-// Close Modal Event
+// 5. Initialize First Load
 document.getElementById('close-modal').addEventListener('click', () => {
     document.getElementById('photo-modal').classList.add('modal-hidden');
     if (viewerInstance) {
