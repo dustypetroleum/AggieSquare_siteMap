@@ -1,2 +1,1 @@
-Can I have a delete option in the view mode too, so when selecting a point it gives an option to remove it? When selecting the direction and the FOV, can it then show that angle as two lines instead of just the line and then an arc between those lines, so a 360 would be a circle.
 

@@ -28,10 +28,25 @@
     <div id="map"></div>
 
     <div id="edit-sidebar">
-        <h3>Add Photo Location</h3>
-        <p class="instruction">1. Click the map to place location.<br>2. Click again to set direction.</p>
+        <h3>Point Editor</h3>
+        <p class="instruction">1. Click map to place point.<br>2. Move mouse and click to lock direction and FOV.</p>
         
         <form id="editor-form">
+            <div class="input-group">
+                <label>Title / Name:</label>
+                <input type="text" id="edit-title" placeholder="e.g., Main Entrance">
+            </div>
+            
+            <div class="input-group">
+                <label>Comments:</label>
+                <textarea id="edit-comments" rows="2" placeholder="e.g., Needs updated photo"></textarea>
+            </div>
+
+            <div class="input-group">
+                <label>Photo URL / Filename:</label>
+                <input type="text" id="edit-url" placeholder="assets/photos/room101.png">
+            </div>
+
             <div class="input-group">
                 <label>Photo Type:</label>
                 <select id="edit-type">
@@ -39,30 +54,19 @@
                     <option value="panorama">360° Panorama</option>
                 </select>
             </div>
-            
-            <div class="input-group location-data">
-                <label>X-Coord: <span id="display-x">--</span></label>
-                <label>Y-Coord: <span id="display-y">--</span></label>
-            </div>
 
             <div class="input-group vector-data">
-                <label>Direction (Angle):</label>
-                <input type="number" id="edit-angle" readonly placeholder="Click map to set target">
-            </div>
-
-            <div class="input-group">
-                <label>Angle Range (Field of View):</label>
+                <label>Angle Range (FOV):</label>
                 <input type="number" id="edit-fov" value="90" min="10" max="360" step="5">
-                <span class="help-text">10° (Narrow) - 360° (Full Circle)</span>
             </div>
-
-            <div class="input-group">
-                <label>Photo URL/Filename:</label>
-                <input type="text" id="edit-url" placeholder="assets/photos/room101.png">
+            
+            <div class="input-group location-data">
+                <label>Coordinates: <span id="display-x">--</span>, <span id="display-y">--</span></label>
+                <label>Direction: <span id="display-angle">--</span>°</label>
             </div>
 
             <div style="display: flex; gap: 10px; margin-top: 15px;">
-                <button type="submit" id="btn-add-point" style="background-color: #007bff; color: white; flex-grow: 1; border: none; padding: 8px; cursor: pointer;">Add Point</button>
+                <button type="submit" id="btn-add-point" style="background-color: #007bff; color: white; flex-grow: 1; border: none; padding: 8px; cursor: pointer;">Save Point</button>
                 <button type="button" id="btn-cancel" style="background-color: #dc3545; color: white; flex-grow: 1; border: none; padding: 8px; cursor: pointer;">Clear Draft</button>
             </div>
         </form>
@@ -77,5 +81,15 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="js/map.js"></script>
     <script src="js/editor.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.css" />
+<script src="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.js"></script>
+
+<div id="photo-modal" class="modal-hidden">
+    <div class="modal-content">
+        <span id="close-modal">&times;</span>
+        <h3 id="modal-title">Photo View</h3>
+        <div id="viewer-container"></div>
+    </div>
+</div>
 </body>
 </html>
