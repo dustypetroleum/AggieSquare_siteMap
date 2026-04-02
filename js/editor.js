@@ -143,4 +143,9 @@ sidebarForm.addEventListener('submit', (e) => {
     console.log("MARKER DATA JSON:");
     console.log(JSON.stringify(markerData, null, 2));
     alert("Data output to console. Copy the JSON snippet there and paste it into data/locations.json.");
+// Cancel button listener
+document.getElementById('btn-cancel').addEventListener('click', () => {
+    resetEditorWorkflow();
+});
+
 });

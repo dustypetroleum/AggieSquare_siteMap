@@ -2,24 +2,23 @@
 const mapConfigs = {
     'lvl1-south': {
         url: 'assets/floorplans/lvl1-south.png',
-        // Reminder: Replace [1000, 2000] with the actual [height, width] of the PNG in pixels
-        bounds: [[0, 0], [2236, 1142]], 
-        center: [1118, 571]
+        bounds: [[0, 0], [1142, 2236]], 
+        center: [571, 1118]
     },
     'lvl1-north': {
         url: 'assets/floorplans/lvl1-north.png',
-        bounds: [[0, 0], [2231, 1156]],
-        center: [1115, 578]
+        bounds: [[0, 0], [1156, 2231]],
+        center: [578, 1115]
     },
     'lvl2-social': {
         url: 'assets/floorplans/lvl2-social.png',
-        bounds: [[0, 0], [2074 , 1135]],
-        center: [1037, 578]
+        bounds: [[0, 0], [1135, 2074]],
+        center: [567.5, 1037]
     },
     'aggiecommons': {
         url: 'assets/floorplans/aggiecommons.png',
-        bounds: [[0, 0], [1498, 996]], 
-        center: [749, 498]
+        bounds: [[0, 0], [996, 1498]], 
+        center: [498, 749]
     }
 };
 
@@ -57,13 +56,19 @@ function switchMap(mapId) {
 
 // 3. View Mode Functionality (Markers with FOV visualization)
 function createDirectionalMarker(latlng, angle, fov, title) {
-    // Basic standard marker for click detection
     const marker = L.marker(latlng);
-
-    // Advanced Leaflet feature: SVG Field of View visualization
-    // Requires specialized Leaflet plugins or custom JS (demonstrated here simply)
-    // A simplified popup content is used for initial interaction:
     marker.bindPopup(`<b>${title}</b><br>Facing: ${angle}° (FOV: ${fov}°)`);
+
+    // New Right-Click to Delete Logic
+    marker.on('contextmenu', (e) => {
+        // Only allow deletion if the user has toggled Edit Mode on
+        // 'isEditMode' is a global variable from editor.js
+        if (typeof isEditMode !== 'undefined' && isEditMode) {
+            if (confirm(`Delete marker: ${title}?`)) {
+                marker.remove();
+            }
+        }
+    });
 
     return marker;
 }
