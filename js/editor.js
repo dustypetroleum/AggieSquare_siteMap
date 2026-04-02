@@ -1,36 +1,37 @@
+// Global State
 let isEditMode = false;
 let currentMapBounds;
 let currentMapId;
 
-let placementState = 'none'; 
+let placementState = 'none'; // 'none', 'location_placed', 'vector_target_set'
 let tempMarker; 
-let tempPolygon; // Replaces the single line
+let tempPolygon; 
 let sessionMarkers = [];
 let currentAngle = 0;
+let lastTargetLatLng = null;
 
+// DOM Elements
 const bodyElement = document.body;
 const sidebarForm = document.getElementById('editor-form');
-const displayX = document.getElementById('display-x');
-const displayY = document.getElementById('display-y');
-const displayAngle = document.getElementById('display-angle');
 const inputFov = document.getElementById('edit-fov');
 
+// Initialization
 function initEditor(mapId, bounds) {
     currentMapId = mapId;
     currentMapBounds = bounds;
     resetEditorWorkflow();
 }
 
+// Reset Workflow
 function resetEditorWorkflow() {
     placementState = 'none';
+    lastTargetLatLng = null;
     if (tempMarker) map.removeLayer(tempMarker);
     if (tempPolygon) map.removeLayer(tempPolygon);
-    displayX.textContent = '--';
-    displayY.textContent = '--';
-    displayAngle.textContent = '--';
     sidebarForm.reset();
 }
 
+// Mode Toggling
 function setMode(mode) {
     isEditMode = (mode === 'edit');
     bodyElement.classList.toggle('edit-mode', isEditMode);
@@ -38,16 +39,15 @@ function setMode(mode) {
     document.getElementById('btn-edit').classList.toggle('active', isEditMode);
     document.getElementById('btn-view').classList.toggle('active', !isEditMode);
     if (!isEditMode) resetEditorWorkflow();
-    // Removed the code that hid the markerLayer, so existing points remain visible
 }
 
 document.getElementById('btn-edit').addEventListener('click', () => setMode('edit'));
 document.getElementById('btn-view').addEventListener('click', () => setMode('view'));
 document.getElementById('btn-cancel').addEventListener('click', resetEditorWorkflow);
 
-// Dynamic Polygon Rendering
+// Dynamic Polygon Rendering (FOV Cone)
 function drawDynamicFov(targetLatLng) {
-    if (!tempMarker) return;
+    if (!tempMarker || !targetLatLng) return;
     if (tempPolygon) map.removeLayer(tempPolygon);
 
     const center = tempMarker.getLatLng();
@@ -55,63 +55,71 @@ function drawDynamicFov(targetLatLng) {
     
     const dx = targetLatLng.lng - center.lng;
     const dy = targetLatLng.lat - center.lat;
-    const radius = Math.max(20, Math.sqrt(dx*dx + dy*dy)); // Minimum radius for visibility
+    const radius = Math.max(30, Math.sqrt(dx*dx + dy*dy)); 
     
     let radians = Math.atan2(dx, dy);
     currentAngle = Math.round((radians * 180 / Math.PI + 360) % 360);
-    displayAngle.textContent = currentAngle;
 
+    // Full 360 circle
     if (fov >= 360) {
-        tempPolygon = L.circle(center, { radius: radius, color: '#ffc107', fillOpacity: 0.3, weight: 1, interactive: false }).addTo(map);
+        tempPolygon = L.circle(center, { 
+            radius: radius, 
+            color: '#ffc107', 
+            fillOpacity: 0.4, 
+            weight: 2, 
+            interactive: false 
+        }).addTo(map);
         return;
     }
 
+    // Directional cone
     const halfFov = fov / 2;
     const points = [center];
-    for (let a = currentAngle - halfFov; a <= currentAngle + halfFov; a += 5) {
+    
+    for (let a = currentAngle - halfFov; a <= currentAngle + halfFov; a += 2) {
         const rad = a * Math.PI / 180;
         points.push([center.lat + radius * Math.cos(rad), center.lng + radius * Math.sin(rad)]);
     }
     
-    tempPolygon = L.polygon(points, { color: '#ffc107', fillOpacity: 0.4, weight: 2, interactive: false }).addTo(map);
+    tempPolygon = L.polygon(points, { 
+        color: '#ffc107', 
+        fillOpacity: 0.4, 
+        weight: 2, 
+        interactive: false 
+    }).addTo(map);
 }
 
-// Map Event Listeners for Drawing
+// Map Interaction Listeners
 map.on('click', (e) => {
     if (!isEditMode) return;
 
     if (placementState === 'none') {
         placementState = 'location_placed';
-        
-        // Small drafting marker
         tempMarker = L.circleMarker(e.latlng, { radius: 6, color: '#28a745', fillColor: '#28a745', fillOpacity: 1 }).addTo(map);
-        
-        displayX.textContent = Math.round(e.latlng.lng);
-        displayY.textContent = Math.round(e.latlng.lat);
-        
     } else if (placementState === 'location_placed') {
         placementState = 'vector_target_set';
-        drawDynamicFov(e.latlng); // Finalize polygon
+        lastTargetLatLng = e.latlng;
+        drawDynamicFov(lastTargetLatLng); 
     } else if (placementState === 'vector_target_set') {
-        placementState = 'location_placed'; // Allow redrawing vector
+        placementState = 'location_placed'; 
     }
 });
 
 map.on('mousemove', (e) => {
     if (isEditMode && placementState === 'location_placed') {
-        drawDynamicFov(e.latlng);
+        lastTargetLatLng = e.latlng;
+        drawDynamicFov(lastTargetLatLng);
     }
 });
 
-// Update FOV dynamically if input changes while drawing
+// FOV Input Listener
 inputFov.addEventListener('input', () => {
-    if (placementState === 'vector_target_set' && tempPolygon) {
-        const bounds = tempPolygon.getBounds();
-        drawDynamicFov(bounds.getCenter()); // Redraw based on current shape center
+    if ((placementState === 'location_placed' || placementState === 'vector_target_set') && lastTargetLatLng) {
+        drawDynamicFov(lastTargetLatLng); 
     }
 });
 
-// Save Point to Session
+// Save Point to Session Array
 sidebarForm.addEventListener('submit', (e) => {
     e.preventDefault();
     if (!tempMarker || placementState !== 'vector_target_set') {
@@ -134,11 +142,9 @@ sidebarForm.addEventListener('submit', (e) => {
         url: document.getElementById('edit-url').value
     };
 
-// ... inside sidebarForm.addEventListener('submit', (e) => { ...
     sessionMarkers.push(markerData);
     document.getElementById('session-count').textContent = sessionMarkers.length;
 
-    // UPDATE THIS FUNCTION CALL: Added markerData.url and markerData.type
     const finalizedMarker = createDirectionalMarker(
         [markerData.y, markerData.x], 
         markerData.orientation, 
@@ -154,7 +160,7 @@ sidebarForm.addEventListener('submit', (e) => {
     resetEditorWorkflow();
 });
 
-// Download Batch Array
+// Download JSON Batch
 document.getElementById('btn-download-batch').addEventListener('click', () => {
     if (sessionMarkers.length === 0) return alert("No points added to the session yet.");
 
