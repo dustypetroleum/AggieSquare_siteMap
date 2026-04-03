@@ -1,13 +1,13 @@
 [
   {
-    "session_id": 1775179935200,
+    "session_id": 1775180309222,
     "map_id": "lvl1-south",
     "title": "Entrance to Aggie Commons",
     "comments": "",
     "type": "panorama",
-    "x": 1401,
-    "y": 394,
-    "orientation": 75,
+    "x": 1416,
+    "y": 399,
+    "orientation": 339,
     "field_of_view": 360,
     "url": "assets/pano/PXL_20260401_222254659.PANO.jpg"
   }
