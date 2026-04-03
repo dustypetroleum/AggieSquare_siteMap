@@ -286,17 +286,5 @@
     "orientation": 88,
     "field_of_view": 120,
     "url": "assets/std/PXL_20260401_224118451.jpg"
-  },
-    {
-    "session_id": 1775238679946,
-    "map_id": "lvl1-north",
-    "title": "",
-    "comments": "",
-    "type": "directional",
-    "x": 516,
-    "y": 534,
-    "orientation": 120,
-    "field_of_view": 90,
-    "url": "assets/std/IMG_1186.HEIC"
   }
 ]
