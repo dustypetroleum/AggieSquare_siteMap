@@ -19,21 +19,13 @@ function generateFloorReport() {
         return;
     }
 
-    const rw = window.open('', '_blank');
-    if (!rw) {
-        alert("Your browser blocked the report from opening. Please allow popups for this site.");
-        return;
-    }
-
     const config = mapConfigs[currentMapId];
     const mapH = config.bounds[1][0];
     const mapW = config.bounds[1][1];
 
-    // NEW: Convert the relative image path to an absolute path based on your current site URL
-    const absoluteImageUrl = new URL(config.url, window.location.href).href;
-
-    let mapHtml = `<div style="position: relative; width: 100%; max-width: 800px; margin: 0 auto 20px auto; border: 1px solid #ccc;">
-        <img src="${absoluteImageUrl}" style="width: 100%; display: block;" alt="Floorplan">`;
+    // 1. Build the Report HTML
+    let mapHtml = `<div style="position: relative; width: 100%; max-width: 800px; margin: 0 auto 20px auto; border: 1px solid #ccc; page-break-inside: avoid;">
+        <img src="${config.url}" style="width: 100%; display: block;" alt="Floorplan">`;
 
     ch.forEach(h => {
         const minLat = Math.min(h.bounds[0].lat, h.bounds[1].lat);
@@ -47,46 +39,60 @@ function generateFloorReport() {
         const heightPct = ((maxLat - minLat) / mapH) * 100;
 
         mapHtml += `
-        <div style="position: absolute; left: ${leftPct}%; bottom: ${bottomPct}%; width: ${widthPct}%; height: ${heightPct}%; background-color: rgba(255, 235, 59, 0.4); border: 2px solid #ffeb3b; display: flex; align-items: center; justify-content: center;">
+        <div style="position: absolute; left: ${leftPct}%; bottom: ${bottomPct}%; width: ${widthPct}%; height: ${heightPct}%; background-color: rgba(255, 235, 59, 0.4); border: 2px solid #ffeb3b; display: flex; align-items: center; justify-content: center; box-sizing: border-box;">
             <span style="background: white; color: black; border-radius: 50%; width: 22px; height: 22px; text-align: center; line-height: 22px; font-weight: bold; font-size: 12px; border: 1px solid #333; box-shadow: 0 1px 3px rgba(0,0,0,0.5);">${h.id}</span>
         </div>`;
     });
     mapHtml += `</div>`;
 
-    let h = `<div style="font-family: Arial; padding: 20px; max-width: 1000px; margin: 0 auto;">
-        <h1 style="border-bottom: 2px solid #ccc; padding-bottom: 10px;">Floor Report: ${currentMapId}</h1>
-        <p style="margin-bottom: 20px;"><strong>Date:</strong> ${new Date().toLocaleDateString()}</p>
-        
-        ${mapHtml}
-
-        <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
-            <thead>
-                <tr style="background: #f2f2f2;">
-                    <th style="border: 1px solid #ddd; padding: 12px; width: 50px;">ID</th>
-                    <th style="border: 1px solid #ddd; padding: 12px; text-align: left;">Notes & Comments</th>
-                </tr>
-            </thead>
-            <tbody>`;
-            
+    let reportContent = `
+        <div style="font-family: Arial; padding: 20px; max-width: 1000px; margin: 0 auto;">
+            <h1 style="border-bottom: 2px solid #ccc; padding-bottom: 10px;">Floor Report: ${currentMapId}</h1>
+            <p style="margin-bottom: 20px;"><strong>Date:</strong> ${new Date().toLocaleDateString()}</p>
+            ${mapHtml}
+            <table style="width: 100%; border-collapse: collapse; margin-top: 20px; page-break-before: auto;">
+                <thead>
+                    <tr style="background: #f2f2f2;">
+                        <th style="border: 1px solid #ddd; padding: 12px; width: 50px;">ID</th>
+                        <th style="border: 1px solid #ddd; padding: 12px; text-align: left;">Notes & Comments</th>
+                    </tr>
+                </thead>
+                <tbody>`;
+                
     ch.forEach(x => {
-        h += `<tr><td style="border: 1px solid #ddd; padding: 12px; text-align: center;"><strong>${x.id}</strong></td><td style="border: 1px solid #ddd; padding: 12px;">${x.comment}</td></tr>`;
+        reportContent += `<tr><td style="border: 1px solid #ddd; padding: 12px; text-align: center;"><strong>${x.id}</strong></td><td style="border: 1px solid #ddd; padding: 12px;">${x.comment}</td></tr>`;
     });
-    
-    h += `</tbody></table>
-        <div style="margin-top: 30px; text-align: center;">
-            <button onclick="window.print()" style="padding: 10px 20px; background: #007bff; color: white; border: none; cursor: pointer; border-radius: 4px;">Print PDF</button>
-        </div>
-        <style>
-            @media print { 
-                button { display: none !important; } 
-                /* NEW: Forces browsers to print the yellow backgrounds */
+    reportContent += `</tbody></table></div>`;
+
+    // 2. Manage the hidden print container
+    let printContainer = document.getElementById('print-report-container');
+    if (!printContainer) {
+        printContainer = document.createElement('div');
+        printContainer.id = 'print-report-container';
+        document.body.appendChild(printContainer);
+
+        // Inject print-specific CSS rules
+        const style = document.createElement('style');
+        style.innerHTML = `
+            @media print {
+                body > *:not(#print-report-container) { display: none !important; }
+                #print-report-container { display: block !important; position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 0; }
                 * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
             }
-        </style>
-    </div>`;
+            @media screen {
+                #print-report-container { display: none !important; }
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
+    // 3. Inject content and trigger print dialog
+    printContainer.innerHTML = reportContent;
     
-    rw.document.write(`<html><head><title>Floor Report - ${currentMapId}</title></head><body>${h}</body></html>`); 
-    rw.document.close();
+    // 500ms delay ensures the browser has rendered the DOM before printing
+    setTimeout(() => {
+        window.print();
+    }, 500);
 }
 
 function initEditor(mapId, bounds) { 
