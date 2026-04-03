@@ -1,17 +1,38 @@
 // 1. Map Configurations
 const mapConfigs = {
-    'lvl1-south': { url: 'assets/floorplans/lvl1-south.png', bounds: [[0, 0], [1142, 2236]], center: [571, 1118] },
-    'lvl1-north': { url: 'assets/floorplans/lvl1-north.png', bounds: [[0, 0], [1156, 2231]], center: [578, 1115] },
-    'lvl2-social': { url: 'assets/floorplans/lvl2-social.png', bounds: [[0, 0], [1135, 2074]], center: [567.5, 1037] },
-    'aggiecommons': { url: 'assets/floorplans/aggiecommons.png', bounds: [[0, 0], [996, 1498]], center: [498, 749] }
+    'lvl1-south': { 
+        url: 'assets/floorplans/lvl1-south.png', 
+        bounds: [[0, 0], [1142, 2236]], 
+        center: [571, 1118] 
+    },
+    'lvl1-north': { 
+        url: 'assets/floorplans/lvl1-north.png', 
+        bounds: [[0, 0], [1156, 2231]], 
+        center: [578, 1115] 
+    },
+    'lvl2-social': { 
+        url: 'assets/floorplans/lvl2-social.png', 
+        bounds: [[0, 0], [1135, 2074]], 
+        center: [567.5, 1037] 
+    },
+    'aggiecommons': { 
+        url: 'assets/floorplans/aggiecommons.png', 
+        bounds: [[0, 0], [996, 1498]], 
+        center: [498, 749] 
+    }
 };
 
 // 2. Initialize Leaflet Map
-const map = L.map('map', { crs: L.CRS.Simple, minZoom: -2, maxZoom: 3 });
+const map = L.map('map', { 
+    crs: L.CRS.Simple, 
+    minZoom: -2, 
+    maxZoom: 3 
+});
 
 let currentImageOverlay;
 let markerLayer = L.layerGroup().addTo(map);
 
+// 3. Switch Floor Plan
 function switchMap(mapId) {
     const config = mapConfigs[mapId];
     if (!config) return;
@@ -24,15 +45,49 @@ function switchMap(mapId) {
 
     if (typeof initEditor === 'function') initEditor(mapId, config.bounds);
     
-    // NEW: Load the permanent markers for this floor
+    // Load the permanent markers for this floor
     loadSavedMarkers(mapId);
 }
 
-// 3. Marker & Popup Logic
+// 4. Fetch Saved Data
+function loadSavedMarkers(mapId) {
+    fetch('data/locations.json')
+        .then(response => {
+            if (!response.ok) throw new Error("No data file found.");
+            return response.json();
+        })
+        .then(data => {
+            const floorData = data.filter(item => item.map_id === mapId);
+            
+            floorData.forEach(loc => {
+                const marker = createDirectionalMarker(
+                    [loc.y, loc.x], 
+                    loc.orientation, 
+                    loc.field_of_view, 
+                    loc.title,
+                    loc.comments,
+                    loc.url,
+                    loc.type
+                );
+                
+                marker.session_id = loc.session_id || Date.now() + Math.random(); 
+                marker.addTo(markerLayer);
+            });
+        })
+        .catch(error => console.log('Notice: No saved points loaded yet.', error));
+}
+
+// 5. Marker & Popup Logic
 let viewerInstance = null;
 
 function createDirectionalMarker(latlng, angle, fov, title, comments, url, type) {
-    const marker = L.circleMarker(latlng, { radius: 6, color: '#ffffff', weight: 2, fillColor: '#007bff', fillOpacity: 0.9 });
+    const marker = L.circleMarker(latlng, { 
+        radius: 6, 
+        color: '#ffffff', 
+        weight: 2, 
+        fillColor: '#007bff', 
+        fillOpacity: 0.9 
+    });
     
     const popupContent = document.createElement('div');
     popupContent.innerHTML = `
@@ -73,7 +128,7 @@ function createDirectionalMarker(latlng, angle, fov, title, comments, url, type)
     return marker;
 }
 
-// 4. Modal & Viewer Rendering
+// 6. Modal & Viewer Rendering
 function openPhotoViewer(data) {
     const modal = document.getElementById('photo-modal');
     const container = document.getElementById('viewer-container');
@@ -105,7 +160,7 @@ function openPhotoViewer(data) {
     }
 }
 
-// 5. Initialize First Load
+// 7. Event Listeners & Initialization
 document.getElementById('close-modal').addEventListener('click', () => {
     document.getElementById('photo-modal').classList.add('modal-hidden');
     if (viewerInstance) {
@@ -116,34 +171,3 @@ document.getElementById('close-modal').addEventListener('click', () => {
 
 document.getElementById('map-selector').addEventListener('change', (e) => switchMap(e.target.value));
 switchMap('lvl1-south');
-
-// Fetch and load saved markers from the JSON file
-function loadSavedMarkers(mapId) {
-    fetch('data/locations.json')
-        .then(response => {
-            if (!response.ok) throw new Error("No data file found.");
-            return response.json();
-        })
-        .then(data => {
-            // Filter the master list for points belonging to the current floor
-            const floorData = data.filter(item => item.map_id === mapId);
-            
-            floorData.forEach(loc => {
-                // Generate the marker using our existing function
-                const marker = createDirectionalMarker(
-                    [loc.y, loc.x], 
-                    loc.orientation, 
-                    loc.field_of_view, 
-                    loc.title,
-                    loc.comments,
-                    loc.url,
-                    loc.type
-                );
-                
-                // Add an ID to prevent duplicating points if switching maps
-                marker.session_id = loc.session_id || Date.now() + Math.random(); 
-                marker.addTo(markerLayer);
-            });
-        })
-        .catch(error => console.log('Notice: No saved points loaded yet.', error));
-}
