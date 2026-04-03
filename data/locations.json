@@ -1,1 +1,14 @@
-
+[
+  {
+    "session_id": 1775182241712,
+    "map_id": "lvl1-south",
+    "title": "Space Between Aggie Commons and Main Lobby",
+    "comments": "",
+    "type": "panorama",
+    "x": 1305,
+    "y": 378,
+    "orientation": 358,
+    "field_of_view": 360,
+    "url": "assets/pano/PXL_20260401_222254659.PANO.jpg"
+  }
+]
