@@ -1,28 +1,19 @@
 // 1. Map Configurations
 // Bounds are [Height, Width] in pixels.
 const mapConfigs = {
-    'lvl1-north': { 
-        url: 'assets/floorplans/lvl1-north.png', 
-        bounds: [[0, 0], [1156, 2231]], 
-        center: [578, 1115] 
-    },
-    'lvl2-social': { 
-        url: 'assets/floorplans/lvl2-social.png', 
-        bounds: [[0, 0], [1135, 2074]], 
-        center: [567.5, 1037] 
-    },
-    'lvl1-south': { 
-        url: 'assets/floorplans/lvl1-south.png', 
-        bounds: [[0, 0], [1142, 2236]], 
-        center: [571, 1118] 
-    },
-    'aggiecommons': { 
-        url: 'assets/floorplans/aggiecommons.png', 
-        bounds: [[0, 0], [996, 1498]], 
-        center: [498, 749] 
-    }
+    'lvl1-south': { url: 'assets/floorplans/lvl1-south.png', bounds: [[0, 0], [1142, 2236]], center: [571, 1118], scale: 1.1 },
+    'lvl1-north': { url: 'assets/floorplans/lvl1-north.png', bounds: [[0, 0], [1156, 2231]], center: [578, 1115], scale: 1.5 },
+    'lvl2-social': { url: 'assets/floorplans/lvl2-social.png', bounds: [[0, 0], [1135, 2074]], center: [567.5, 1037], scale: 1.33 },
+    'aggiecommons': { url: 'assets/floorplans/aggiecommons.png', bounds: [[0, 0], [996, 1498]], center: [498, 749], scale: 1.4 }
 };
-
+};
+// Utility to convert pixels to Feet/Inches
+function formatDistance(pixels, scale) {
+    const totalInches = pixels * scale;
+    const feet = Math.floor(totalInches / 12);
+    const inches = Math.round(totalInches % 12);
+    return `${feet}' ${inches}"`;
+}
 // 2. Initialize Leaflet Map
 const map = L.map('map', { 
     crs: L.CRS.Simple, 
@@ -93,21 +84,23 @@ function loadSavedMarkers(mapId) {
 
 // 5. Marker Generator & Popup Actions
 function createDirectionalMarker(latlng, angle, fov, title, comments, url, type) {
-    // 1. Create the base Circle Marker
+    // Set color based on type: Green for panorama, Blue for standard
+    const dotColor = type === 'panorama' ? '#28a745' : '#007bff';
+    
     const marker = L.circleMarker(latlng, { 
         radius: 6, 
         color: '#ffffff', 
         weight: 2, 
-        fillColor: '#007bff', 
+        fillColor: dotColor, 
         fillOpacity: 0.9 
     });
 
     let hoverPolygon = null;
 
-// 2. Hover Event: Show Polygon
-    marker.on('mouseover', function(e) {
+    // Hover Event: Show Polygon AND Tooltip Preview
+    marker.on('mouseover', function() {
         if (fov > 0 && fov < 360) {
-            const radius = 60; 
+            const radius = 80; 
             const halfFov = fov / 2;
             const points = [latlng];
             
@@ -120,42 +113,38 @@ function createDirectionalMarker(latlng, angle, fov, title, comments, url, type)
             }
 
             hoverPolygon = L.polygon(points, {
-                color: '#007bff',
-                weight: 1,
-                fillColor: '#007bff',
-                fillOpacity: 0.1, // Bumped slightly to 0.1 just to ensure we see it first
+                color: dotColor, // Match polygon color to dot color
+                weight: 0.5,
+                fillColor: dotColor,
+                fillOpacity: 0.05,
                 interactive: false
-            });
-            
-            // USE THE LAYER GROUP INSTEAD OF THE MAP
-            hoverPolygon.addTo(markerLayer); 
+            }).addTo(markerLayer);
         }
+        marker.setRadius(8);
     });
 
-    // 3. Mouse Out Event: Remove Polygon
     marker.on('mouseout', function() {
         if (hoverPolygon) {
-            // REMOVE FROM THE LAYER GROUP
-            markerLayer.removeLayer(hoverPolygon); 
+            markerLayer.removeLayer(hoverPolygon);
             hoverPolygon = null;
         }
+        marker.setRadius(6);
     });
 
-    // 4. Popup Logic (Remains identical)
-    const popupContent = document.createElement('div');
-    popupContent.innerHTML = `
-        <b style="font-size:1.1em;">${title || 'Untitled'}</b><br>
-        <i>${comments || 'No comments'}</i><br>
-        <hr style="margin:5px 0; border:0; border-top:1px solid #ccc;">
-        <button class="view-photo-btn" style="background: #28a745; color: white; border: none; margin-top: 8px; cursor: pointer; padding: 6px 12px; border-radius: 4px; width: 100%;">View Photo</button>
-        <button class="delete-marker-btn" style="background: #dc3545; color: white; border: none; margin-top: 5px; cursor: pointer; padding: 6px 12px; border-radius: 4px; width: 100%;">Delete Point</button>
-    `;
+    // Create Hover Tooltip (Preview Image)
+    if (url) {
+        const tooltipHtml = `
+            <div style="text-align: center; max-width: 200px;">
+                <img src="${url}" style="width: 100%; border-radius: 4px; margin-bottom: 5px;">
+                ${title ? `<b style="font-size:0.9em; display:block;">${title}</b>` : ''}
+            </div>
+        `;
+        marker.bindTooltip(tooltipHtml, { direction: 'top', className: 'photo-tooltip' });
+    }
 
-    marker.bindPopup(popupContent);
-    marker.on('popupopen', () => {
-        const delBtn = popupContent.querySelector('.delete-marker-btn');
-        if (typeof isEditMode !== 'undefined' && !isEditMode) delBtn.style.display = 'none';
-        popupContent.querySelector('.view-photo-btn').onclick = () => openPhotoViewer({ title, url, type, fov });
+    // Click Event: Open Modal Directly (No more popup)
+    marker.on('click', () => {
+        openPhotoViewer({ title, comments, url, type, fov });
     });
 
     return marker;
@@ -175,6 +164,14 @@ function openPhotoViewer(data) {
 
     modal.classList.remove('modal-hidden');
 
+    // Clean formatting for Title and Comments
+    const displayTitle = data.title ? `<b>${data.title}</b>` : '';
+    const displayComment = data.comments ? `<span style="font-weight:normal; font-style:italic; margin-left:15px; font-size:0.9em;">- ${data.comments}</span>` : '';
+    const separator = (data.title && data.comments) ? ' ' : '';
+    
+    // Set base title
+    titleElement.innerHTML = `${displayTitle}${separator}${displayComment}`;
+
     if (data.type === 'panorama') {
         viewerInstance = pannellum.viewer('viewer-container', {
             "type": "equirectangular",
@@ -189,16 +186,21 @@ function openPhotoViewer(data) {
         });
 
         viewerInstance.on('zoomchange', (newHfov) => {
-            titleElement.textContent = `${data.title} | Current HFOV: ${Math.round(newHfov)}`;
+            titleElement.innerHTML = `${displayTitle}${separator}${displayComment} <span style="float:right; font-size:0.8em;">[HFOV: ${Math.round(newHfov)}]</span>`;
         });
         
-        titleElement.textContent = `${data.title} | Current HFOV: 110`;
+        titleElement.innerHTML = `${displayTitle}${separator}${displayComment} <span style="float:right; font-size:0.8em;">[HFOV: 110]</span>`;
     } else {
-        titleElement.textContent = data.title || 'Photo View';
+        if (!data.title && !data.comments) titleElement.textContent = 'Photo View';
+        
         const img = document.createElement('img');
         img.src = data.url;
         img.className = 'standard-img';
-        img.alt = data.title;
+        
+        img.onerror = function() {
+            container.innerHTML = `<p style="color:white; padding:20px;"><b>Error:</b> Image could not be loaded. Ensure it is a .JPG or .PNG.</p>`;
+        };
+        
         container.appendChild(img);
     }
 }
