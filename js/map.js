@@ -22,17 +22,12 @@ const mapConfigs = {
     }
 };
 
-// 2. Initialize Leaflet Map
-const map = L.map('map', { 
-    crs: L.CRS.Simple, 
-    minZoom: -2, 
-    maxZoom: 3 
-});
+const map = L.map('map', { crs: L.CRS.Simple, minZoom: -2, maxZoom: 3 });
 
 let currentImageOverlay;
 let markerLayer = L.layerGroup().addTo(map);
+let viewerInstance = null;
 
-// 3. Switch Floor Plan
 function switchMap(mapId) {
     const config = mapConfigs[mapId];
     if (!config) return;
@@ -44,12 +39,9 @@ function switchMap(mapId) {
     map.fitBounds(config.bounds);
 
     if (typeof initEditor === 'function') initEditor(mapId, config.bounds);
-    
-    // Load the permanent markers for this floor
     loadSavedMarkers(mapId);
 }
 
-// 4. Fetch Saved Data
 function loadSavedMarkers(mapId) {
     fetch('data/locations.json')
         .then(response => {
@@ -58,36 +50,20 @@ function loadSavedMarkers(mapId) {
         })
         .then(data => {
             const floorData = data.filter(item => item.map_id === mapId);
-            
             floorData.forEach(loc => {
                 const marker = createDirectionalMarker(
-                    [loc.y, loc.x], 
-                    loc.orientation, 
-                    loc.field_of_view, 
-                    loc.title,
-                    loc.comments,
-                    loc.url,
-                    loc.type
+                    [loc.y, loc.x], loc.orientation, loc.field_of_view, 
+                    loc.title, loc.comments, loc.url, loc.type
                 );
-                
                 marker.session_id = loc.session_id || Date.now() + Math.random(); 
                 marker.addTo(markerLayer);
             });
         })
-        .catch(error => console.log('Notice: No saved points loaded yet.', error));
+        .catch(error => console.log('Notice: No saved points loaded.', error));
 }
 
-// 5. Marker & Popup Logic
-let viewerInstance = null;
-
 function createDirectionalMarker(latlng, angle, fov, title, comments, url, type) {
-    const marker = L.circleMarker(latlng, { 
-        radius: 6, 
-        color: '#ffffff', 
-        weight: 2, 
-        fillColor: '#007bff', 
-        fillOpacity: 0.9 
-    });
+    const marker = L.circleMarker(latlng, { radius: 6, color: '#ffffff', weight: 2, fillColor: '#007bff', fillOpacity: 0.9 });
     
     const popupContent = document.createElement('div');
     popupContent.innerHTML = `
@@ -114,21 +90,19 @@ function createDirectionalMarker(latlng, angle, fov, title, comments, url, type)
                     marker.remove(); 
                     if (typeof sessionMarkers !== 'undefined' && marker.session_id) {
                         sessionMarkers = sessionMarkers.filter(m => m.session_id !== marker.session_id);
-                        document.getElementById('session-count').textContent = sessionMarkers.length;
+                        const countEl = document.getElementById('session-count');
+                        if (countEl) countEl.textContent = sessionMarkers.length;
                     }
                 }
             };
         }
 
-        viewBtn.onclick = () => {
-            openPhotoViewer({ title, url, type, fov });
-        };
+        viewBtn.onclick = () => openPhotoViewer({ title, url, type, fov });
     });
 
     return marker;
 }
 
-// 6. Modal & Viewer Rendering
 function openPhotoViewer(data) {
     const modal = document.getElementById('photo-modal');
     const container = document.getElementById('viewer-container');
@@ -160,9 +134,7 @@ function openPhotoViewer(data) {
     }
 }
 
-// 7. Event Listeners & Initialization
 document.addEventListener('DOMContentLoaded', () => {
-    // 1. Check for the modal close button
     const closeModalBtn = document.getElementById('close-modal');
     if (closeModalBtn) {
         closeModalBtn.addEventListener('click', () => {
@@ -172,18 +144,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 viewerInstance = null;
             }
         });
-    } else {
-        console.warn("Notice: 'close-modal' element not found in HTML.");
     }
 
-    // 2. Check for the map selector dropdown
     const mapSelector = document.getElementById('map-selector');
     if (mapSelector) {
         mapSelector.addEventListener('change', (e) => switchMap(e.target.value));
-    } else {
-        console.warn("Notice: 'map-selector' element not found in HTML.");
     }
 
-    // 3. Load the initial map safely
     switchMap('lvl1-south');
 });
