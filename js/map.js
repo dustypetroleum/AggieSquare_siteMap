@@ -1,72 +1,99 @@
 // 1. Map Configurations
+// Bounds are [Height, Width] in pixels.
 const mapConfigs = {
     'lvl1-south': { 
-        url: 'assets/floorplans/lvl1-south.png', 
+        url: 'assets/floorplans/AggieSquareSouthLobby_lvl1.png', 
         bounds: [[0, 0], [1142, 2236]], 
         center: [571, 1118] 
     },
     'lvl1-north': { 
-        url: 'assets/floorplans/lvl1-north.png', 
+        url: 'assets/floorplans/AggieSquareNorthLobby_lvl1.png', 
         bounds: [[0, 0], [1156, 2231]], 
         center: [578, 1115] 
     },
     'lvl2-social': { 
-        url: 'assets/floorplans/lvl2-social.png', 
+        url: 'assets/floorplans/AggieSquareAssemblyHall_lvl2.png', 
         bounds: [[0, 0], [1135, 2074]], 
         center: [567.5, 1037] 
     },
     'aggiecommons': { 
-        url: 'assets/floorplans/aggiecommons.png', 
+        url: 'assets/floorplans/AggieSquareAggieCommons_lvl1.png', 
         bounds: [[0, 0], [996, 1498]], 
         center: [498, 749] 
     }
 };
 
-const map = L.map('map', { crs: L.CRS.Simple, minZoom: -2, maxZoom: 3 });
+// 2. Initialize Leaflet Map
+const map = L.map('map', { 
+    crs: L.CRS.Simple, 
+    minZoom: -2, 
+    maxZoom: 3 
+});
 
 let currentImageOverlay;
 let markerLayer = L.layerGroup().addTo(map);
 let viewerInstance = null;
 
+// 3. Switch Floor Plan logic
 function switchMap(mapId) {
     const config = mapConfigs[mapId];
     if (!config) return;
 
+    // Clear existing layers
     if (currentImageOverlay) map.removeLayer(currentImageOverlay);
     markerLayer.clearLayers();
 
+    // Add new image overlay
     currentImageOverlay = L.imageOverlay(config.url, config.bounds).addTo(map);
     
-    // Explicitly bring the marker layer to the front
-    markerLayer.bringToFront(); 
-
-    map.fitBounds(config.bounds);
+    // Set view and load markers with a slight delay to ensure CRS alignment
+    setTimeout(() => {
+        map.fitBounds(config.bounds);
+        loadSavedMarkers(mapId);
+    }, 50);
 
     if (typeof initEditor === 'function') initEditor(mapId, config.bounds);
-    loadSavedMarkers(mapId);
 }
+
+// 4. Fetch and Load Saved Markers
 function loadSavedMarkers(mapId) {
-    fetch('data/locations.json')
+    // Append a timestamp to prevent browser caching of the JSON file
+    fetch(`data/locations.json?t=${Date.now()}`)
         .then(response => {
-            if (!response.ok) throw new Error("No data file found.");
+            if (!response.ok) throw new Error("Data file not found.");
             return response.json();
         })
         .then(data => {
             const floorData = data.filter(item => item.map_id === mapId);
+            
             floorData.forEach(loc => {
+                // [loc.y, loc.x] follows Leaflet's [Vertical, Horizontal] standard
                 const marker = createDirectionalMarker(
-                    [loc.y, loc.x], loc.orientation, loc.field_of_view, 
-                    loc.title, loc.comments, loc.url, loc.type
+                    [loc.y, loc.x], 
+                    loc.orientation, 
+                    loc.field_of_view, 
+                    loc.title,
+                    loc.comments,
+                    loc.url,
+                    loc.type
                 );
+                
                 marker.session_id = loc.session_id || Date.now() + Math.random(); 
                 marker.addTo(markerLayer);
             });
         })
-        .catch(error => console.log('Notice: No saved points loaded.', error));
+        .catch(error => console.warn('Notice: Marker load skipped or failed.', error));
 }
 
+// 5. Marker Generator & Popup Actions
 function createDirectionalMarker(latlng, angle, fov, title, comments, url, type) {
-    const marker = L.circleMarker(latlng, { radius: 6, color: '#ffffff', weight: 2, fillColor: '#007bff', fillOpacity: 0.9 });
+    const marker = L.circleMarker(latlng, { 
+        radius: 6, 
+        color: '#ffffff', 
+        weight: 2, 
+        fillColor: '#007bff', 
+        fillOpacity: 0.9 
+    });
     
     const popupContent = document.createElement('div');
     popupContent.innerHTML = `
@@ -106,12 +133,12 @@ function createDirectionalMarker(latlng, angle, fov, title, comments, url, type)
     return marker;
 }
 
-// 6. Modal & Viewer Rendering
+// 6. Modal Photo Viewer logic
 function openPhotoViewer(data) {
     const modal = document.getElementById('photo-modal');
     const container = document.getElementById('viewer-container');
     const titleElement = document.getElementById('modal-title');
-    
+
     container.innerHTML = '';
     if (viewerInstance) {
         viewerInstance.destroy();
@@ -133,14 +160,11 @@ function openPhotoViewer(data) {
             "vaov": 65
         });
 
-        // Listen for zoom changes and update the title text
         viewerInstance.on('zoomchange', (newHfov) => {
             titleElement.textContent = `${data.title} | Current HFOV: ${Math.round(newHfov)}`;
         });
         
-        // Set initial title with zoom value
         titleElement.textContent = `${data.title} | Current HFOV: 110`;
-
     } else {
         titleElement.textContent = data.title || 'Photo View';
         const img = document.createElement('img');
@@ -151,6 +175,7 @@ function openPhotoViewer(data) {
     }
 }
 
+// 7. Lifecycle Initialization
 document.addEventListener('DOMContentLoaded', () => {
     const closeModalBtn = document.getElementById('close-modal');
     if (closeModalBtn) {
@@ -168,5 +193,6 @@ document.addEventListener('DOMContentLoaded', () => {
         mapSelector.addEventListener('change', (e) => switchMap(e.target.value));
     }
 
+    // Load initial map
     switchMap('lvl1-south');
 });
