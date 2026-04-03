@@ -123,7 +123,7 @@ function createDirectionalMarker(latlng, angle, fov, title, comments, url, type)
                 color: '#007bff',
                 weight: 1,
                 fillColor: '#007bff',
-                fillOpacity: 0.05, // Your requested transparency
+                fillOpacity: 0.1, // Your requested transparency
                 interactive: false
             }).addTo(map);
         }
