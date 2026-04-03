@@ -1,11 +1,6 @@
 // 1. Map Configurations
 // Bounds are [Height, Width] in pixels.
 const mapConfigs = {
-    'lvl1-south': { 
-        url: 'assets/floorplans/lvl1-south.png', 
-        bounds: [[0, 0], [1142, 2236]], 
-        center: [571, 1118] 
-    },
     'lvl1-north': { 
         url: 'assets/floorplans/lvl1-north.png', 
         bounds: [[0, 0], [1156, 2231]], 
@@ -15,6 +10,11 @@ const mapConfigs = {
         url: 'assets/floorplans/lvl2-social.png', 
         bounds: [[0, 0], [1135, 2074]], 
         center: [567.5, 1037] 
+    },
+    'lvl1-south': { 
+        url: 'assets/floorplans/lvl1-south.png', 
+        bounds: [[0, 0], [1142, 2236]], 
+        center: [571, 1118] 
     },
     'aggiecommons': { 
         url: 'assets/floorplans/aggiecommons.png', 
