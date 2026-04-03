@@ -104,10 +104,10 @@ function createDirectionalMarker(latlng, angle, fov, title, comments, url, type)
 
     let hoverPolygon = null;
 
-    // 2. Hover Event: Show Polygon
+// 2. Hover Event: Show Polygon
     marker.on('mouseover', function(e) {
         if (fov > 0 && fov < 360) {
-            const radius = 60; // Increased slightly for better visibility since it's temporary
+            const radius = 60; 
             const halfFov = fov / 2;
             const points = [latlng];
             
@@ -123,16 +123,20 @@ function createDirectionalMarker(latlng, angle, fov, title, comments, url, type)
                 color: '#007bff',
                 weight: 1,
                 fillColor: '#007bff',
-                fillOpacity: 0.1, // Your requested transparency
+                fillOpacity: 0.1, // Bumped slightly to 0.1 just to ensure we see it first
                 interactive: false
-            }).addTo(map);
+            });
+            
+            // USE THE LAYER GROUP INSTEAD OF THE MAP
+            hoverPolygon.addTo(markerLayer); 
         }
     });
 
     // 3. Mouse Out Event: Remove Polygon
     marker.on('mouseout', function() {
         if (hoverPolygon) {
-            map.removeLayer(hoverPolygon);
+            // REMOVE FROM THE LAYER GROUP
+            markerLayer.removeLayer(hoverPolygon); 
             hoverPolygon = null;
         }
     });
