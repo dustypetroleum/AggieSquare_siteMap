@@ -107,8 +107,8 @@ function createDirectionalMarker(latlng, angle, fov, title, comments, url, type)
 function openPhotoViewer(data) {
     const modal = document.getElementById('photo-modal');
     const container = document.getElementById('viewer-container');
-    document.getElementById('modal-title').textContent = data.title || 'Photo View';
-
+    const titleElement = document.getElementById('modal-title');
+    
     container.innerHTML = '';
     if (viewerInstance) {
         viewerInstance.destroy();
@@ -125,13 +125,21 @@ function openPhotoViewer(data) {
             "haov": data.fov >= 360 ? 360 : data.fov,
             "minYaw": data.fov >= 360 ? -180 : -(data.fov / 2),
             "maxYaw": data.fov >= 360 ? 180 : (data.fov / 2),
-            
-            // NEW PARAMETERS:
-            "hfov": 120,    // Sets the initial zoom level (higher number = zoomed out more)
-            "maxHfov": 150, // Allows the user to zoom out further with the mouse/scroll wheel
-            "vaov": 125.5      // Fixes vertical stretch. Standard smartphone panos are roughly 60-70 degrees tall.
+            "hfov": 110,
+            "maxHfov": 150,
+            "vaov": 65
         });
+
+        // Listen for zoom changes and update the title text
+        viewerInstance.on('zoomchange', (newHfov) => {
+            titleElement.textContent = `${data.title} | Current HFOV: ${Math.round(newHfov)}`;
+        });
+        
+        // Set initial title with zoom value
+        titleElement.textContent = `${data.title} | Current HFOV: 110`;
+
     } else {
+        titleElement.textContent = data.title || 'Photo View';
         const img = document.createElement('img');
         img.src = data.url;
         img.className = 'standard-img';
