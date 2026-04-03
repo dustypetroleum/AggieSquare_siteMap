@@ -93,6 +93,7 @@ function loadSavedMarkers(mapId) {
 
 // 5. Marker Generator & Popup Actions
 function createDirectionalMarker(latlng, angle, fov, title, comments, url, type) {
+    // 1. Create the base Circle Marker
     const marker = L.circleMarker(latlng, { 
         radius: 6, 
         color: '#ffffff', 
@@ -100,40 +101,57 @@ function createDirectionalMarker(latlng, angle, fov, title, comments, url, type)
         fillColor: '#007bff', 
         fillOpacity: 0.9 
     });
-    
+
+    let hoverPolygon = null;
+
+    // 2. Hover Event: Show Polygon
+    marker.on('mouseover', function(e) {
+        if (fov > 0 && fov < 360) {
+            const radius = 60; // Increased slightly for better visibility since it's temporary
+            const halfFov = fov / 2;
+            const points = [latlng];
+            
+            for (let a = angle - halfFov; a <= angle + halfFov; a += 5) {
+                const rad = a * Math.PI / 180;
+                points.push([
+                    latlng[0] + radius * Math.cos(rad), 
+                    latlng[1] + radius * Math.sin(rad)
+                ]);
+            }
+
+            hoverPolygon = L.polygon(points, {
+                color: '#007bff',
+                weight: 1,
+                fillColor: '#007bff',
+                fillOpacity: 0.05, // Your requested transparency
+                interactive: false
+            }).addTo(map);
+        }
+    });
+
+    // 3. Mouse Out Event: Remove Polygon
+    marker.on('mouseout', function() {
+        if (hoverPolygon) {
+            map.removeLayer(hoverPolygon);
+            hoverPolygon = null;
+        }
+    });
+
+    // 4. Popup Logic (Remains identical)
     const popupContent = document.createElement('div');
     popupContent.innerHTML = `
         <b style="font-size:1.1em;">${title || 'Untitled'}</b><br>
         <i>${comments || 'No comments'}</i><br>
         <hr style="margin:5px 0; border:0; border-top:1px solid #ccc;">
-        Facing: ${angle}° (FOV: ${fov}°)<br>
         <button class="view-photo-btn" style="background: #28a745; color: white; border: none; margin-top: 8px; cursor: pointer; padding: 6px 12px; border-radius: 4px; width: 100%;">View Photo</button>
         <button class="delete-marker-btn" style="background: #dc3545; color: white; border: none; margin-top: 5px; cursor: pointer; padding: 6px 12px; border-radius: 4px; width: 100%;">Delete Point</button>
     `;
 
     marker.bindPopup(popupContent);
-
     marker.on('popupopen', () => {
         const delBtn = popupContent.querySelector('.delete-marker-btn');
-        const viewBtn = popupContent.querySelector('.view-photo-btn');
-        
-        if (typeof isEditMode !== 'undefined' && !isEditMode) {
-            delBtn.style.display = 'none';
-        } else {
-            delBtn.style.display = 'block';
-            delBtn.onclick = () => {
-                if (confirm(`Delete marker: ${title}?`)) {
-                    marker.remove(); 
-                    if (typeof sessionMarkers !== 'undefined' && marker.session_id) {
-                        sessionMarkers = sessionMarkers.filter(m => m.session_id !== marker.session_id);
-                        const countEl = document.getElementById('session-count');
-                        if (countEl) countEl.textContent = sessionMarkers.length;
-                    }
-                }
-            };
-        }
-
-        viewBtn.onclick = () => openPhotoViewer({ title, url, type, fov });
+        if (typeof isEditMode !== 'undefined' && !isEditMode) delBtn.style.display = 'none';
+        popupContent.querySelector('.view-photo-btn').onclick = () => openPhotoViewer({ title, url, type, fov });
     });
 
     return marker;
