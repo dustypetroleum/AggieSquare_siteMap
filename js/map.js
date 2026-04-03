@@ -40,14 +40,17 @@ function switchMap(mapId) {
     const config = mapConfigs[mapId];
     if (!config) return;
 
-    // Clear existing layers
-    if (currentImageOverlay) map.removeLayer(currentImageOverlay);
+    // 1. Clear existing layers
+    if (currentImageOverlay) {
+        map.removeLayer(currentImageOverlay);
+    }
     markerLayer.clearLayers();
 
-    // Create and add new image overlay
+    // 2. Create and add new image overlay
     currentImageOverlay = L.imageOverlay(config.url, config.bounds);
     
-    // Once the image loads, fit the bounds and load the markers
+    // 3. IMPORTANT: Once the image is ready, fit the map and THEN load markers.
+    // This ensures markers are drawn on top of the image.
     currentImageOverlay.on('load', function() {
         map.fitBounds(config.bounds);
         loadSavedMarkers(mapId);
@@ -55,7 +58,9 @@ function switchMap(mapId) {
 
     currentImageOverlay.addTo(map);
 
-    if (typeof initEditor === 'function') initEditor(mapId, config.bounds);
+    if (typeof initEditor === 'function') {
+        initEditor(mapId, config.bounds);
+    }
 }
 
 // 4. Fetch and Load Saved Markers
