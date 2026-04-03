@@ -23,6 +23,9 @@ function switchMap(mapId) {
     map.fitBounds(config.bounds);
 
     if (typeof initEditor === 'function') initEditor(mapId, config.bounds);
+    
+    // NEW: Load the permanent markers for this floor
+    loadSavedMarkers(mapId);
 }
 
 // 3. Marker & Popup Logic
@@ -113,3 +116,34 @@ document.getElementById('close-modal').addEventListener('click', () => {
 
 document.getElementById('map-selector').addEventListener('change', (e) => switchMap(e.target.value));
 switchMap('lvl1-south');
+
+// Fetch and load saved markers from the JSON file
+function loadSavedMarkers(mapId) {
+    fetch('data/locations.json')
+        .then(response => {
+            if (!response.ok) throw new Error("No data file found.");
+            return response.json();
+        })
+        .then(data => {
+            // Filter the master list for points belonging to the current floor
+            const floorData = data.filter(item => item.map_id === mapId);
+            
+            floorData.forEach(loc => {
+                // Generate the marker using our existing function
+                const marker = createDirectionalMarker(
+                    [loc.y, loc.x], 
+                    loc.orientation, 
+                    loc.field_of_view, 
+                    loc.title,
+                    loc.comments,
+                    loc.url,
+                    loc.type
+                );
+                
+                // Add an ID to prevent duplicating points if switching maps
+                marker.session_id = loc.session_id || Date.now() + Math.random(); 
+                marker.addTo(markerLayer);
+            });
+        })
+        .catch(error => console.log('Notice: No saved points loaded yet.', error));
+}
