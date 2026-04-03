@@ -103,6 +103,7 @@ function createDirectionalMarker(latlng, angle, fov, title, comments, url, type)
     return marker;
 }
 
+// 6. Modal & Viewer Rendering
 function openPhotoViewer(data) {
     const modal = document.getElementById('photo-modal');
     const container = document.getElementById('viewer-container');
@@ -123,7 +124,12 @@ function openPhotoViewer(data) {
             "autoLoad": true,
             "haov": data.fov >= 360 ? 360 : data.fov,
             "minYaw": data.fov >= 360 ? -180 : -(data.fov / 2),
-            "maxYaw": data.fov >= 360 ? 180 : (data.fov / 2)
+            "maxYaw": data.fov >= 360 ? 180 : (data.fov / 2),
+            
+            // NEW PARAMETERS:
+            "hfov": 120,    // Sets the initial zoom level (higher number = zoomed out more)
+            "maxHfov": 150, // Allows the user to zoom out further with the mouse/scroll wheel
+            "vaov": 65      // Fixes vertical stretch. Standard smartphone panos are roughly 60-70 degrees tall.
         });
     } else {
         const img = document.createElement('img');
