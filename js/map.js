@@ -127,9 +127,9 @@ function openPhotoViewer(data) {
             "maxYaw": data.fov >= 360 ? 180 : (data.fov / 2),
             
             // NEW PARAMETERS:
-            "hfov": 120,    // Sets the initial zoom level (higher number = zoomed out more)
-            "maxHfov": 150, // Allows the user to zoom out further with the mouse/scroll wheel
-            "vaov": 80      // Fixes vertical stretch. Standard smartphone panos are roughly 60-70 degrees tall.
+            "hfov": 250,    // Sets the initial zoom level (higher number = zoomed out more)
+            "maxHfov": 300, // Allows the user to zoom out further with the mouse/scroll wheel
+            "vaov": 120      // Fixes vertical stretch. Standard smartphone panos are roughly 60-70 degrees tall.
         });
     } else {
         const img = document.createElement('img');
