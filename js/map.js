@@ -36,12 +36,15 @@ function switchMap(mapId) {
     markerLayer.clearLayers();
 
     currentImageOverlay = L.imageOverlay(config.url, config.bounds).addTo(map);
+    
+    // Explicitly bring the marker layer to the front
+    markerLayer.bringToFront(); 
+
     map.fitBounds(config.bounds);
 
     if (typeof initEditor === 'function') initEditor(mapId, config.bounds);
     loadSavedMarkers(mapId);
 }
-
 function loadSavedMarkers(mapId) {
     fetch('data/locations.json')
         .then(response => {
