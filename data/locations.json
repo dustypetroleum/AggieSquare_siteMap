@@ -1,1 +1,38 @@
-
+[
+  {
+    "session_id": 1775182241712,
+    "map_id": "lvl1-south",
+    "title": "Space Between Aggie Commons and Main Lobby",
+    "comments": "",
+    "type": "panorama",
+    "x": 1305,
+    "y": 378,
+    "orientation": 358,
+    "field_of_view": 360,
+    "url": "assets/pano/PXL_20260401_222254659.PANO.jpg"
+  },
+    {
+    "session_id": 1775183686992,
+    "map_id": "aggiecommons",
+    "title": "",
+    "comments": "",
+    "type": "directional",
+    "x": 1423,
+    "y": 460,
+    "orientation": 270,
+    "field_of_view": 120,
+    "url": "assets/std/IMG_4563.JPG"
+  },
+  {
+    "session_id": 1775183783326,
+    "map_id": "aggiecommons",
+    "title": "",
+    "comments": "",
+    "type": "directional",
+    "x": 1107,
+    "y": 472,
+    "orientation": 215,
+    "field_of_view": 90,
+    "url": "assets/std/IMG_4564.JPG"
+  }
+]
