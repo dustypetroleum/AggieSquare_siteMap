@@ -27,7 +27,8 @@ const mapConfigs = {
 const map = L.map('map', { 
     crs: L.CRS.Simple, 
     minZoom: -2, 
-    maxZoom: 3 
+    maxZoom: 3,
+    attributionControl: false
 });
 
 let currentImageOverlay;
@@ -43,21 +44,22 @@ function switchMap(mapId) {
     if (currentImageOverlay) map.removeLayer(currentImageOverlay);
     markerLayer.clearLayers();
 
-    // Add new image overlay
-    currentImageOverlay = L.imageOverlay(config.url, config.bounds).addTo(map);
+    // Create and add new image overlay
+    currentImageOverlay = L.imageOverlay(config.url, config.bounds);
     
-    // Set view and load markers with a slight delay to ensure CRS alignment
-    setTimeout(() => {
+    // Once the image loads, fit the bounds and load the markers
+    currentImageOverlay.on('load', function() {
         map.fitBounds(config.bounds);
         loadSavedMarkers(mapId);
-    }, 50);
+    });
+
+    currentImageOverlay.addTo(map);
 
     if (typeof initEditor === 'function') initEditor(mapId, config.bounds);
 }
 
 // 4. Fetch and Load Saved Markers
 function loadSavedMarkers(mapId) {
-    // Append a timestamp to prevent browser caching of the JSON file
     fetch(`data/locations.json?t=${Date.now()}`)
         .then(response => {
             if (!response.ok) throw new Error("Data file not found.");
@@ -67,7 +69,6 @@ function loadSavedMarkers(mapId) {
             const floorData = data.filter(item => item.map_id === mapId);
             
             floorData.forEach(loc => {
-                // [loc.y, loc.x] follows Leaflet's [Vertical, Horizontal] standard
                 const marker = createDirectionalMarker(
                     [loc.y, loc.x], 
                     loc.orientation, 
@@ -193,6 +194,7 @@ document.addEventListener('DOMContentLoaded', () => {
         mapSelector.addEventListener('change', (e) => switchMap(e.target.value));
     }
 
-    // Load initial map
+    // Set initial view and load first map
+    map.setView([0, 0], 0);
     switchMap('lvl1-south');
 });
