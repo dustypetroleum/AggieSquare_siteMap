@@ -29,8 +29,11 @@ function generateFloorReport() {
     const mapH = config.bounds[1][0];
     const mapW = config.bounds[1][1];
 
+    // NEW: Convert the relative image path to an absolute path based on your current site URL
+    const absoluteImageUrl = new URL(config.url, window.location.href).href;
+
     let mapHtml = `<div style="position: relative; width: 100%; max-width: 800px; margin: 0 auto 20px auto; border: 1px solid #ccc;">
-        <img src="${config.url}" style="width: 100%; display: block;" alt="Floorplan">`;
+        <img src="${absoluteImageUrl}" style="width: 100%; display: block;" alt="Floorplan">`;
 
     ch.forEach(h => {
         const minLat = Math.min(h.bounds[0].lat, h.bounds[1].lat);
@@ -73,7 +76,13 @@ function generateFloorReport() {
         <div style="margin-top: 30px; text-align: center;">
             <button onclick="window.print()" style="padding: 10px 20px; background: #007bff; color: white; border: none; cursor: pointer; border-radius: 4px;">Print PDF</button>
         </div>
-        <style>@media print { button { display: none !important; } }</style>
+        <style>
+            @media print { 
+                button { display: none !important; } 
+                /* NEW: Forces browsers to print the yellow backgrounds */
+                * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+            }
+        </style>
     </div>`;
     
     rw.document.write(`<html><head><title>Floor Report - ${currentMapId}</title></head><body>${h}</body></html>`); 
