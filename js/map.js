@@ -161,13 +161,29 @@ function openPhotoViewer(data) {
 }
 
 // 7. Event Listeners & Initialization
-document.getElementById('close-modal').addEventListener('click', () => {
-    document.getElementById('photo-modal').classList.add('modal-hidden');
-    if (viewerInstance) {
-        viewerInstance.destroy();
-        viewerInstance = null;
+document.addEventListener('DOMContentLoaded', () => {
+    // 1. Check for the modal close button
+    const closeModalBtn = document.getElementById('close-modal');
+    if (closeModalBtn) {
+        closeModalBtn.addEventListener('click', () => {
+            document.getElementById('photo-modal').classList.add('modal-hidden');
+            if (viewerInstance) {
+                viewerInstance.destroy();
+                viewerInstance = null;
+            }
+        });
+    } else {
+        console.warn("Notice: 'close-modal' element not found in HTML.");
     }
-});
 
-document.getElementById('map-selector').addEventListener('change', (e) => switchMap(e.target.value));
-switchMap('lvl1-south');
+    // 2. Check for the map selector dropdown
+    const mapSelector = document.getElementById('map-selector');
+    if (mapSelector) {
+        mapSelector.addEventListener('change', (e) => switchMap(e.target.value));
+    } else {
+        console.warn("Notice: 'map-selector' element not found in HTML.");
+    }
+
+    // 3. Load the initial map safely
+    switchMap('lvl1-south');
+});
