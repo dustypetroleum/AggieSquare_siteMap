@@ -2,22 +2,22 @@
 // Bounds are [Height, Width] in pixels.
 const mapConfigs = {
     'lvl1-south': { 
-        url: 'assets/floorplans/AggieSquareSouthLobby_lvl1.png', 
+        url: 'assets/floorplans/lvl1-south.png', 
         bounds: [[0, 0], [1142, 2236]], 
         center: [571, 1118] 
     },
     'lvl1-north': { 
-        url: 'assets/floorplans/AggieSquareNorthLobby_lvl1.png', 
+        url: 'assets/floorplans/lvl1-north.png', 
         bounds: [[0, 0], [1156, 2231]], 
         center: [578, 1115] 
     },
     'lvl2-social': { 
-        url: 'assets/floorplans/AggieSquareAssemblyHall_lvl2.png', 
+        url: 'assets/floorplans/lvl2-social.png', 
         bounds: [[0, 0], [1135, 2074]], 
         center: [567.5, 1037] 
     },
     'aggiecommons': { 
-        url: 'assets/floorplans/AggieSquareAggieCommons_lvl1.png', 
+        url: 'assets/floorplans/aggiecommons.png', 
         bounds: [[0, 0], [996, 1498]], 
         center: [498, 749] 
     }
