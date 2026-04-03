@@ -13,10 +13,10 @@
         <div class="panel-section">
             <label for="map-selector">Current Floor:</label>
             <select id="map-selector">
-                <option value="lvl1-south">Level 1, Lobby South</option>
-                <option value="lvl1-north">Level 1, Lobby North</option>
-                <option value="lvl2-social">Level 2, Social Lab</option>
-                <option value="aggiecommons">Level 1, Aggie Commons</option>
+                <option value="lvl1-south.png">Level 1, Lobby South</option>
+                <option value="lvl1-north.png">Level 1, Lobby North</option>
+                <option value="lvl2-social.png">Level 2, Social Lab</option>
+                <option value="aggiecommons.png">Level 1, Aggie Commons</option>
             </select>
         </div>
         <div class="panel-section mode-toggle">
@@ -60,11 +60,6 @@
                 <input type="number" id="edit-fov" value="90" min="10" max="360" step="5">
             </div>
             
-            <div class="input-group location-data">
-                <label>Coordinates: <span id="display-x">--</span>, <span id="display-y">--</span></label>
-                <label>Direction: <span id="display-angle">--</span>°</label>
-            </div>
-
             <div style="display: flex; gap: 10px; margin-top: 15px;">
                 <button type="submit" id="btn-add-point" style="background-color: #007bff; color: white; flex-grow: 1; border: none; padding: 8px; cursor: pointer;">Save Point</button>
                 <button type="button" id="btn-cancel" style="background-color: #dc3545; color: white; flex-grow: 1; border: none; padding: 8px; cursor: pointer;">Clear Draft</button>
