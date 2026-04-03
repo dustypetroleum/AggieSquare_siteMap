@@ -45,7 +45,7 @@
     "y": 481,
     "orientation": 220,
     "field_of_view": 120,
-    "url": "assets/pano/PXL_20260401_222439276.PANO.jpg"
+    "url": "assets/std/IMG_4566.JPG"
   },
   {
     "session_id": 1775232265725,
@@ -154,5 +154,137 @@
     "orientation": 288,
     "field_of_view": 360,
     "url": "assets/pano/PXL_20260401_224449984.PANO.jpg"
+  },
+    {
+    "session_id": 1775234953487,
+    "map_id": "lvl1-north",
+    "title": "sitemap with some dimensions",
+    "comments": "",
+    "type": "directional",
+    "x": 382,
+    "y": 1048,
+    "orientation": 143,
+    "field_of_view": 90,
+    "url": "assets/std/IMG_4561.JPG"
+  },
+  {
+    "session_id": 1775234983886,
+    "map_id": "lvl1-south",
+    "title": "sitemap with some dimensions",
+    "comments": "",
+    "type": "directional",
+    "x": 364,
+    "y": 1042,
+    "orientation": 153,
+    "field_of_view": 90,
+    "url": "assets/std/IMG_4562.JPG"
+  },
+  {
+    "session_id": 1775235192400,
+    "map_id": "lvl1-south",
+    "title": "",
+    "comments": "",
+    "type": "directional",
+    "x": 1512,
+    "y": 552,
+    "orientation": 228,
+    "field_of_view": 120,
+    "url": "assets/std/IMG_4567.JPG"
+  },
+  {
+    "session_id": 1775235224679,
+    "map_id": "lvl1-south",
+    "title": "",
+    "comments": "",
+    "type": "directional",
+    "x": 1792,
+    "y": 314,
+    "orientation": 279,
+    "field_of_view": 120,
+    "url": "assets/std/IMG_4568.JPG"
+  },
+  {
+    "session_id": 1775235277179,
+    "map_id": "lvl1-south",
+    "title": "",
+    "comments": "",
+    "type": "directional",
+    "x": 1294,
+    "y": 352,
+    "orientation": 291,
+    "field_of_view": 120,
+    "url": "assets/std/IMG_4569.JPG"
+  },
+  {
+    "session_id": 1775235325129,
+    "map_id": "lvl1-south",
+    "title": "",
+    "comments": "",
+    "type": "directional",
+    "x": 814,
+    "y": 652,
+    "orientation": 310,
+    "field_of_view": 120,
+    "url": "assets/std/IMG_4570.JPG"
+  },
+  {
+    "session_id": 1775235366871,
+    "map_id": "lvl1-north",
+    "title": "",
+    "comments": "",
+    "type": "directional",
+    "x": 396,
+    "y": 616,
+    "orientation": 93,
+    "field_of_view": 120,
+    "url": "assets/std/IMG_4571.JPG"
+  },
+  {
+    "session_id": 1775235404118,
+    "map_id": "lvl1-north",
+    "title": "",
+    "comments": "",
+    "type": "directional",
+    "x": 390,
+    "y": 476,
+    "orientation": 44,
+    "field_of_view": 90,
+    "url": "assets/std/IMG_4572.JPG"
+  },
+  {
+    "session_id": 1775235425238,
+    "map_id": "lvl1-north",
+    "title": "",
+    "comments": "",
+    "type": "directional",
+    "x": 820,
+    "y": 766,
+    "orientation": 44,
+    "field_of_view": 90,
+    "url": "assets/std/PXL_20260401_223757258.jpg"
+  },
+  {
+    "session_id": 1775235463202,
+    "map_id": "lvl1-north",
+    "title": "classroom 1220",
+    "comments": "",
+    "type": "directional",
+    "x": 1336,
+    "y": 546,
+    "orientation": 180,
+    "field_of_view": 120,
+    "url": "assets/std/PXL_20260401_223943775.jpg"
+  },
+  {
+    "session_id": 1775235497372,
+    "map_id": "lvl1-north",
+    "title": "",
+    "comments": "",
+    "type": "directional",
+    "x": 1158,
+    "y": 606,
+    "orientation": 88,
+    "field_of_view": 120,
+    "url": "assets/std/PXL_20260401_224118451.jpg"
   }
 ]
