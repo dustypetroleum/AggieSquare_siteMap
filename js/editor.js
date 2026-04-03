@@ -25,13 +25,58 @@ function generateFloorReport() {
         return;
     }
 
-    let h = `<div style="font-family: Arial; padding: 20px;"><h1 style="border-bottom: 2px solid #ccc;">Floor Report: ${currentMapId}</h1><p><strong>Date:</strong> ${new Date().toLocaleDateString()}</p><table style="width: 100%; border-collapse: collapse; margin-top: 20px;"><thead><tr style="background: #f2f2f2;"><th style="border: 1px solid #ddd; padding: 12px; width: 50px;">ID</th><th style="border: 1px solid #ddd; padding: 12px; text-align: left;">Notes & Comments</th></tr></thead><tbody>`;
+    const config = mapConfigs[currentMapId];
+    const mapH = config.bounds[1][0];
+    const mapW = config.bounds[1][1];
+
+    let mapHtml = `<div style="position: relative; width: 100%; max-width: 800px; margin: 0 auto 20px auto; border: 1px solid #ccc;">
+        <img src="${config.url}" style="width: 100%; display: block;" alt="Floorplan">`;
+
+    ch.forEach(h => {
+        const minLat = Math.min(h.bounds[0].lat, h.bounds[1].lat);
+        const maxLat = Math.max(h.bounds[0].lat, h.bounds[1].lat);
+        const minLng = Math.min(h.bounds[0].lng, h.bounds[1].lng);
+        const maxLng = Math.max(h.bounds[0].lng, h.bounds[1].lng);
+
+        const leftPct = (minLng / mapW) * 100;
+        const bottomPct = (minLat / mapH) * 100;
+        const widthPct = ((maxLng - minLng) / mapW) * 100;
+        const heightPct = ((maxLat - minLat) / mapH) * 100;
+
+        mapHtml += `
+        <div style="position: absolute; left: ${leftPct}%; bottom: ${bottomPct}%; width: ${widthPct}%; height: ${heightPct}%; background-color: rgba(255, 235, 59, 0.4); border: 2px solid #ffeb3b; display: flex; align-items: center; justify-content: center;">
+            <span style="background: white; color: black; border-radius: 50%; width: 22px; height: 22px; text-align: center; line-height: 22px; font-weight: bold; font-size: 12px; border: 1px solid #333; box-shadow: 0 1px 3px rgba(0,0,0,0.5);">${h.id}</span>
+        </div>`;
+    });
+    mapHtml += `</div>`;
+
+    let h = `<div style="font-family: Arial; padding: 20px; max-width: 1000px; margin: 0 auto;">
+        <h1 style="border-bottom: 2px solid #ccc; padding-bottom: 10px;">Floor Report: ${currentMapId}</h1>
+        <p style="margin-bottom: 20px;"><strong>Date:</strong> ${new Date().toLocaleDateString()}</p>
+        
+        ${mapHtml}
+
+        <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+            <thead>
+                <tr style="background: #f2f2f2;">
+                    <th style="border: 1px solid #ddd; padding: 12px; width: 50px;">ID</th>
+                    <th style="border: 1px solid #ddd; padding: 12px; text-align: left;">Notes & Comments</th>
+                </tr>
+            </thead>
+            <tbody>`;
+            
     ch.forEach(x => {
         h += `<tr><td style="border: 1px solid #ddd; padding: 12px; text-align: center;"><strong>${x.id}</strong></td><td style="border: 1px solid #ddd; padding: 12px;">${x.comment}</td></tr>`;
     });
-    h += `</tbody></table><div style="margin-top: 30px; text-align: center;"><button onclick="window.print()" style="padding: 10px 20px; background: #007bff; color: white; border: none; cursor: pointer; border-radius: 4px;">Print PDF</button></div><style>@media print { button { display: none !important; } }</style></div>`;
     
-    rw.document.write(`<html><head><title>Floor Report</title></head><body>${h}</body></html>`); 
+    h += `</tbody></table>
+        <div style="margin-top: 30px; text-align: center;">
+            <button onclick="window.print()" style="padding: 10px 20px; background: #007bff; color: white; border: none; cursor: pointer; border-radius: 4px;">Print PDF</button>
+        </div>
+        <style>@media print { button { display: none !important; } }</style>
+    </div>`;
+    
+    rw.document.write(`<html><head><title>Floor Report - ${currentMapId}</title></head><body>${h}</body></html>`); 
     rw.document.close();
 }
 
@@ -60,25 +105,19 @@ function resetEditorWorkflow() {
 function setTool(tool) {
     currentTool = tool; 
     resetEditorWorkflow();
-    
-    // Update button visuals
     document.querySelectorAll('.tool-btn').forEach(btn => btn.classList.remove('active'));
     document.getElementById(`btn-tool-${tool}`)?.classList.add('active');
     
-    // Fetch elements dynamically
     const mc = document.getElementById('map');
-    const form = document.getElementById('editor-form'); 
-    
-    // Toggle cursor and form visibility
     if (tool === 'point') {
         mc.style.cursor = 'crosshair';
-        if (form) form.style.display = 'flex';
+        if (sidebarForm) sidebarForm.style.display = 'flex';
     } else if (tool === 'measure') {
         mc.style.cursor = 'help';
-        if (form) form.style.display = 'none';
+        if (sidebarForm) sidebarForm.style.display = 'none';
     } else if (tool === 'highlight') {
         mc.style.cursor = 'cell';
-        if (form) form.style.display = 'none';
+        if (sidebarForm) sidebarForm.style.display = 'none';
     }
 }
 
@@ -191,7 +230,12 @@ map.on('click', (e) => {
         if (!measureStart) measureStart = e.latlng;
         else { 
             const line = L.polyline([measureStart, e.latlng], {color: '#dc3545', dashArray: '5, 10'}).addTo(measureLayers).bindTooltip(formatDistance(map.distance(measureStart, e.latlng)), {permanent: true, direction: 'center'}).openTooltip(); 
-            line.on('click', function(evt) { L.DomEvent.stop(evt); if (confirm("Delete this measurement?")) measureLayers.removeLayer(this); });
+            
+            line.on('click', function(evt) { 
+                L.DomEvent.stop(evt); 
+                if (confirm("Delete this measurement?")) measureLayers.removeLayer(this); 
+            });
+            
             measureStart = null; 
             if (tempMeasureLine) map.removeLayer(tempMeasureLine); 
         }
@@ -201,8 +245,18 @@ map.on('click', (e) => {
             const bounds = [highlightStart, e.latlng], comment = prompt("Label:") || "No comment", id = highlightCounter++;
             const rect = L.rectangle(bounds, { color: "#ffeb3b", weight: 1, fillOpacity: 0.1, fillColor: "#ffeb3b" }).addTo(highlightLayers);
             const label = L.marker(rect.getBounds().getCenter(), { icon: L.divIcon({ className: 'highlight-label', html: `<div style="background:white; color:black; border-radius:50%; width:22px; height:22px; text-align:center; line-height:22px; font-weight:bold; border:1px solid #333; font-size:12px;">${id}</div>` }) }).addTo(highlightLayers);
+            
             highlights.push({ id, bounds, comment, map_id: currentMapId, rect, label });
-            rect.on('click', function(evt) { L.DomEvent.stop(evt); if (confirm("Delete this highlight?")) { highlightLayers.removeLayer(rect); highlightLayers.removeLayer(label); highlights = highlights.filter(h => h.id !== id); } });
+            
+            rect.on('click', function(evt) { 
+                L.DomEvent.stop(evt); 
+                if (confirm("Delete this highlight?")) { 
+                    highlightLayers.removeLayer(rect); 
+                    highlightLayers.removeLayer(label); 
+                    highlights = highlights.filter(h => h.id !== id); 
+                } 
+            });
+            
             highlightStart = null; 
             if (tempHighlightRect) map.removeLayer(tempHighlightRect);
         }
