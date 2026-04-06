@@ -1,17 +1,25 @@
 // 1. Map Configurations
 const mapConfigs = {
+    'overview': { url: 'assets/floorplans/aggiesquare_full.png', bounds: [[0, 0], [1169, 827]], center: [584.5, 413.5], scale: 1 },
     'lvl1-north': { url: 'assets/floorplans/lvl1-north.png', bounds: [[0, 0], [1156, 2231]], center: [578, 1115], scale: 1.5 },
     'lvl1-south': { url: 'assets/floorplans/lvl1-south.png', bounds: [[0, 0], [1142, 2236]], center: [571, 1118], scale: 1.1 },
     'aggiecommons': { url: 'assets/floorplans/aggiecommons.png', bounds: [[0, 0], [996, 1498]], center: [498, 749], scale: 1.4 },
     'lvl2-social': { url: 'assets/floorplans/lvl2-social.png', bounds: [[0, 0], [1135, 2074]], center: [567.5, 1037], scale: 1.33 }
-    
 };
 
-// 2. Initialize Leaflet Map
+// 2. Navigation Zones for Overview
+const overviewZones = [
+    { id: 'lvl1-north', bounds: [[1151, 13], [761, 681]], name: 'North Lobby' },
+    { id: 'lvl1-south', bounds: [[765, 13], [402, 268]], name: 'South Lobby' },
+    { id: 'aggiecommons', bounds: [[639, 176], [422, 563]], name: 'Aggie Commons' },
+    { id: 'lvl2-social', bounds: [[384, 13], [28, 661]], name: 'Social Lab' }
+];
+
+// 3. Initialize Leaflet Map
 const map = L.map('map', { crs: L.CRS.Simple, minZoom: -2, maxZoom: 3, attributionControl: false });
 let currentImageOverlay, markerLayer = L.layerGroup().addTo(map), viewerInstance = null;
 
-// 3. Switch Floor Plan logic
+// 4. Switch Floor Plan logic
 function switchMap(mapId) {
     const config = mapConfigs[mapId];
     if (!config) return;
@@ -23,7 +31,13 @@ function switchMap(mapId) {
     
     currentImageOverlay.on('load', () => { 
         map.fitBounds(config.bounds); 
-        loadSavedMarkers(mapId); 
+        
+        // Load navigation zones if on the overview, otherwise load markers
+        if (mapId === 'overview') {
+            loadOverviewInteractivity();
+        } else {
+            loadSavedMarkers(mapId); 
+        }
     });
 
     currentImageOverlay.on('error', () => alert(`Error: Floorplan not found at ${config.url}`));
@@ -33,7 +47,29 @@ function switchMap(mapId) {
     if (typeof initEditor === 'function') initEditor(mapId, config.bounds);
 }
 
-// 4. Fetch and Load Saved Markers
+// 5. Overview Map Interactivity
+function loadOverviewInteractivity() {
+    overviewZones.forEach(zone => {
+        const rect = L.rectangle(zone.bounds, { 
+            color: '#007bff', weight: 2, fillOpacity: 0.0, opacity: 0 
+        }).addTo(markerLayer);
+        
+        rect.bindTooltip(`<b>${zone.name}</b><br>Click to view floorplan`, { direction: 'center', className: 'nav-tooltip' });
+        
+        // Hover effects
+        rect.on('mouseover', () => rect.setStyle({ fillOpacity: 0.2, opacity: 1 }));
+        rect.on('mouseout', () => rect.setStyle({ fillOpacity: 0.0, opacity: 0 }));
+        
+        // Navigation trigger
+        rect.on('click', () => {
+            const selector = document.getElementById('map-selector');
+            if (selector) selector.value = zone.id;
+            switchMap(zone.id);
+        });
+    });
+}
+
+// 6. Fetch and Load Saved Markers
 function loadSavedMarkers(mapId) {
     fetch(`data/locations.json?t=${Date.now()}`)
         .then(res => { if (!res.ok) throw new Error("File not found."); return res.json(); })
@@ -49,7 +85,7 @@ function loadSavedMarkers(mapId) {
         }).catch(err => console.warn('Marker load skipped.', err));
 }
 
-// 5. Marker Generator & Interactions
+// 7. Marker Generator & Interactions
 function createDirectionalMarker(latlng, angle, fov, title, comments, url, type) {
     const dotColor = type === 'panorama' ? '#28a745' : '#007bff';
     const marker = L.circleMarker(latlng, { radius: 6, color: '#fff', weight: 2, fillColor: dotColor, fillOpacity: 0.9 });
@@ -72,7 +108,6 @@ function createDirectionalMarker(latlng, angle, fov, title, comments, url, type)
     });
 
     if (url) {
-        // Explicit width and height prevent the "white square" bug before the image loads
         const tooltipHtml = `
             <div style="text-align: center; width: 200px;">
                 <img src="${url}" style="width: 200px; height: 130px; object-fit: cover; border-radius: 4px; margin-bottom: 5px;" alt="Preview">
@@ -100,7 +135,7 @@ function createDirectionalMarker(latlng, angle, fov, title, comments, url, type)
     return marker;
 }
 
-// 6. Modal Photo Viewer
+// 8. Modal Photo Viewer
 function openPhotoViewer(data) {
     const modal = document.getElementById('photo-modal');
     const container = document.getElementById('viewer-container');
@@ -132,7 +167,7 @@ function openPhotoViewer(data) {
     }
 }
 
-// 7. Initialization
+// 9. Initialization
 document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('close-modal')?.addEventListener('click', () => { 
         document.getElementById('photo-modal').classList.add('modal-hidden'); 
@@ -141,5 +176,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('map-selector')?.addEventListener('change', (e) => switchMap(e.target.value));
     
     map.setView([0, 0], 0);
-    switchMap('lvl1-south');
+    
+    // Set the overview as the default landing page
+    switchMap('overview');
 });

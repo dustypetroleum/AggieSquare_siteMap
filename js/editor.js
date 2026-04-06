@@ -13,6 +13,11 @@ const inputFov = document.getElementById('edit-fov');
 
 // 1. Core Functions (Loaded First)
 function generateFloorReport() {
+    if (currentMapId === 'overview') {
+        alert("Floor reports are not available for the overview map.");
+        return;
+    }
+
     const ch = highlights.filter(h => h.map_id === currentMapId); 
     if (ch.length === 0) {
         alert("No highlights exist on this floor. Draw a highlight first to generate a report.");
@@ -23,7 +28,6 @@ function generateFloorReport() {
     const mapH = config.bounds[1][0];
     const mapW = config.bounds[1][1];
 
-    // 1. Build the Report HTML
     let mapHtml = `<div style="position: relative; width: 100%; max-width: 800px; margin: 0 auto 20px auto; border: 1px solid #ccc; page-break-inside: avoid;">
         <img src="${config.url}" style="width: 100%; display: block;" alt="Floorplan">`;
 
@@ -64,14 +68,12 @@ function generateFloorReport() {
     });
     reportContent += `</tbody></table></div>`;
 
-    // 2. Manage the hidden print container
     let printContainer = document.getElementById('print-report-container');
     if (!printContainer) {
         printContainer = document.createElement('div');
         printContainer.id = 'print-report-container';
         document.body.appendChild(printContainer);
 
-        // Inject print-specific CSS rules
         const style = document.createElement('style');
         style.innerHTML = `
             @media print {
@@ -86,10 +88,8 @@ function generateFloorReport() {
         document.head.appendChild(style);
     }
 
-    // 3. Inject content and trigger print dialog
     printContainer.innerHTML = reportContent;
     
-    // 500ms delay ensures the browser has rendered the DOM before printing
     setTimeout(() => {
         window.print();
     }, 500);
@@ -98,11 +98,49 @@ function generateFloorReport() {
 function initEditor(mapId, bounds) { 
     currentMapId = mapId; 
     currentMapBounds = bounds; 
+    
+    // Force View Mode if landing on the overview
+    if (mapId === 'overview' && isEditMode) {
+        setMode('view');
+    }
+
     resetEditorWorkflow(); 
     measureLayers.clearLayers(); 
     highlightLayers.clearLayers(); 
     highlights = []; 
     highlightCounter = 1;
+
+    // Toggle button availability based on the map
+    const btnEdit = document.getElementById('btn-edit');
+    const btnReport = document.getElementById('btn-floor-report');
+
+    if (mapId === 'overview') {
+        if (btnEdit) {
+            btnEdit.disabled = true;
+            btnEdit.style.opacity = '0.5';
+            btnEdit.style.cursor = 'not-allowed';
+            btnEdit.title = 'Edit mode is disabled on the overview map';
+        }
+        if (btnReport) {
+            btnReport.disabled = true;
+            btnReport.style.opacity = '0.5';
+            btnReport.style.cursor = 'not-allowed';
+            btnReport.title = 'Reports are disabled on the overview map';
+        }
+    } else {
+        if (btnEdit) {
+            btnEdit.disabled = false;
+            btnEdit.style.opacity = '1';
+            btnEdit.style.cursor = 'pointer';
+            btnEdit.title = '';
+        }
+        if (btnReport) {
+            btnReport.disabled = false;
+            btnReport.style.opacity = '1';
+            btnReport.style.cursor = 'pointer';
+            btnReport.title = '';
+        }
+    }
 }
 
 function resetEditorWorkflow() {
@@ -137,6 +175,10 @@ function setTool(tool) {
 }
 
 function setMode(mode) {
+    if (mode === 'edit' && currentMapId === 'overview') {
+        return; // Secondary safety check
+    }
+
     isEditMode = (mode === 'edit');
     bodyElement.classList.toggle('edit-mode', isEditMode); 
     bodyElement.classList.toggle('view-mode', !isEditMode);
@@ -228,7 +270,7 @@ if (inputFov) {
 
 // 3. Map Interactions
 map.on('click', (e) => {
-    if (!isEditMode) return;
+    if (!isEditMode || currentMapId === 'overview') return;
     
     if (currentTool === 'point') {
         if (placementState === 'none') { 
@@ -245,12 +287,7 @@ map.on('click', (e) => {
         if (!measureStart) measureStart = e.latlng;
         else { 
             const line = L.polyline([measureStart, e.latlng], {color: '#dc3545', dashArray: '5, 10'}).addTo(measureLayers).bindTooltip(formatDistance(map.distance(measureStart, e.latlng)), {permanent: true, direction: 'center'}).openTooltip(); 
-            
-            line.on('click', function(evt) { 
-                L.DomEvent.stop(evt); 
-                if (confirm("Delete this measurement?")) measureLayers.removeLayer(this); 
-            });
-            
+            line.on('click', function(evt) { L.DomEvent.stop(evt); if (confirm("Delete this measurement?")) measureLayers.removeLayer(this); });
             measureStart = null; 
             if (tempMeasureLine) map.removeLayer(tempMeasureLine); 
         }
@@ -260,18 +297,8 @@ map.on('click', (e) => {
             const bounds = [highlightStart, e.latlng], comment = prompt("Label:") || "No comment", id = highlightCounter++;
             const rect = L.rectangle(bounds, { color: "#ffeb3b", weight: 1, fillOpacity: 0.1, fillColor: "#ffeb3b" }).addTo(highlightLayers);
             const label = L.marker(rect.getBounds().getCenter(), { icon: L.divIcon({ className: 'highlight-label', html: `<div style="background:white; color:black; border-radius:50%; width:22px; height:22px; text-align:center; line-height:22px; font-weight:bold; border:1px solid #333; font-size:12px;">${id}</div>` }) }).addTo(highlightLayers);
-            
             highlights.push({ id, bounds, comment, map_id: currentMapId, rect, label });
-            
-            rect.on('click', function(evt) { 
-                L.DomEvent.stop(evt); 
-                if (confirm("Delete this highlight?")) { 
-                    highlightLayers.removeLayer(rect); 
-                    highlightLayers.removeLayer(label); 
-                    highlights = highlights.filter(h => h.id !== id); 
-                } 
-            });
-            
+            rect.on('click', function(evt) { L.DomEvent.stop(evt); if (confirm("Delete this highlight?")) { highlightLayers.removeLayer(rect); highlightLayers.removeLayer(label); highlights = highlights.filter(h => h.id !== id); } });
             highlightStart = null; 
             if (tempHighlightRect) map.removeLayer(tempHighlightRect);
         }
@@ -279,7 +306,8 @@ map.on('click', (e) => {
 });
 
 map.on('mousemove', (e) => {
-    if (!isEditMode) return;
+    if (!isEditMode || currentMapId === 'overview') return;
+
     if (currentTool === 'point' && placementState === 'location_placed') { 
         lastTargetLatLng = e.latlng; drawDynamicFov(lastTargetLatLng); 
     } else if (currentTool === 'measure' && measureStart) { 
