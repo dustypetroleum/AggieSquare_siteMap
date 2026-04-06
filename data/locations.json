@@ -442,5 +442,16 @@
     "orientation": 134,
     "field_of_view": 90,
     "url": "assets/std/IMG_1213.jpg"
+  },
+  {
+    "session_id": 1775498393838,
+    "map_id": "lvl1-north",
+    "title": "Aggie Square Walkthrough",
+    "type": "video_path",
+    "x_start": 2148,
+    "y_start": 632,
+    "x_end": 1724,
+    "y_end": 632,
+    "url": "https://youtu.be/0IubfKYKFe0"
   }
 ]
