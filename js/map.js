@@ -24,6 +24,12 @@ function switchMap(mapId) {
     const config = mapConfigs[mapId];
     if (!config) return;
 
+    // Force the dropdown menu to match the currently loading map
+    const selector = document.getElementById('map-selector');
+    if (selector && selector.value !== mapId) {
+        selector.value = mapId;
+    }
+
     if (currentImageOverlay) map.removeLayer(currentImageOverlay);
     markerLayer.clearLayers();
 
