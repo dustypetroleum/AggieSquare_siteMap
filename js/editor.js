@@ -68,15 +68,34 @@ function resetEditorWorkflow() {
 }
 
 function setTool(tool) {
-    currentTool = tool; resetEditorWorkflow();
+    currentTool = tool; 
+    resetEditorWorkflow();
     document.querySelectorAll('.tool-btn').forEach(btn => btn.classList.remove('active'));
     document.getElementById(`btn-tool-${tool}`)?.classList.add('active');
     
     const mc = document.getElementById('map');
-    if (tool === 'point') { mc.style.cursor = 'crosshair'; if (sidebarForm) sidebarForm.style.display = 'flex'; }
-    else if (tool === 'measure') { mc.style.cursor = 'help'; if (sidebarForm) sidebarForm.style.display = 'none'; }
-    else if (tool === 'highlight') { mc.style.cursor = 'cell'; if (sidebarForm) sidebarForm.style.display = 'none'; }
-    else if (tool === 'video') { mc.style.cursor = 'crosshair'; if (sidebarForm) sidebarForm.style.display = 'none'; }
+    const form = document.getElementById('editor-form');
+    const dataGroup = document.getElementById('data-group');
+    const dataDivider = document.getElementById('data-divider');
+    const reportGroup = document.getElementById('report-group');
+
+    if (tool === 'point') {
+        mc.style.cursor = 'crosshair';
+        if (dataGroup) dataGroup.style.display = 'block';
+        if (form) form.style.display = 'flex';
+        if (dataDivider) dataDivider.style.display = 'block';
+        if (reportGroup) reportGroup.style.display = 'none';
+    } else if (tool === 'video') {
+        mc.style.cursor = 'crosshair';
+        if (dataGroup) dataGroup.style.display = 'block';
+        if (form) form.style.display = 'none'; // Video uses prompts, so hide the point form
+        if (dataDivider) dataDivider.style.display = 'none';
+        if (reportGroup) reportGroup.style.display = 'none';
+    } else if (tool === 'measure' || tool === 'highlight') {
+        mc.style.cursor = (tool === 'measure') ? 'help' : 'cell';
+        if (dataGroup) dataGroup.style.display = 'none';
+        if (reportGroup) reportGroup.style.display = 'block';
+    }
 }
 
 function setMode(mode) {

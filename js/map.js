@@ -204,13 +204,31 @@ function openPhotoViewer(data) {
     }
 }
 
-// 9. Init
+// 9. Initialization & Map Legend
+const mapLegend = L.control({ position: 'bottomleft' });
+
+mapLegend.onAdd = function () {
+    const div = L.DomUtil.create('div', 'map-legend');
+    div.innerHTML = `
+        <h4>Map Key</h4>
+        <div class="legend-item"><span class="legend-icon" style="background: #007bff;"></span> Standard Photo</div>
+        <div class="legend-item"><span class="legend-icon" style="background: #28a745;"></span> 360° Panorama</div>
+        <div class="legend-item"><span class="legend-line"></span> Video Walkthrough</div>
+    `;
+    return div;
+};
+
 document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('close-modal')?.addEventListener('click', () => { 
         document.getElementById('photo-modal').classList.add('modal-hidden'); 
         if (viewerInstance) { viewerInstance.destroy(); viewerInstance = null; } 
     });
     document.getElementById('map-selector')?.addEventListener('change', (e) => switchMap(e.target.value));
+    
     map.setView([0, 0], 0);
+    
+    // Mount the legend to the map
+    mapLegend.addTo(map); 
+    
     switchMap('overview');
 });

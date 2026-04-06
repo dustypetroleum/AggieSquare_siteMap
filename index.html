@@ -65,6 +65,37 @@
         /* Image Viewer Container */
         #viewer-container { flex: 1; display: flex; justify-content: center; align-items: center; background: #000; overflow: hidden; position: relative; }
         .standard-img { max-width: 100%; max-height: 100%; object-fit: contain; }
+        /* Map Legend Styling */
+        .map-legend { 
+            background: white; 
+            padding: 10px 15px; 
+            border-radius: 5px; 
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3); 
+            font-size: 13px; 
+            color: #333; 
+            z-index: 1000; 
+        }
+        .map-legend h4 { 
+            margin: 0 0 8px 0; 
+            font-size: 14px; 
+            border-bottom: 1px solid #ccc; 
+            padding-bottom: 4px; 
+        }
+        .legend-item { display: flex; align-items: center; margin-bottom: 6px; }
+        .legend-icon { 
+            width: 12px; height: 12px; 
+            border-radius: 50%; display: inline-block; 
+            margin-right: 8px; border: 1px solid #fff; 
+            box-shadow: 0 0 2px rgba(0,0,0,0.5); 
+        }
+        .legend-line { 
+            width: 14px; height: 4px; 
+            display: inline-block; margin-right: 8px; 
+            background: #9c27b0; 
+        }
+
+        /* Automatically hide the legend when Edit Mode is active */
+        body.edit-mode .map-legend { display: none; }
     </style>
 </head>
 <body class="view-mode">
@@ -91,42 +122,40 @@
         
         <div id="sidebar">
             
-            <div class="editor-toolbar">
-                <button id="btn-tool-point" class="tool-btn active" onclick="setTool('point')">📍 Point</button>
+            <div class="editor-toolbar" style="margin-bottom: 15px;">
                 <button id="btn-tool-measure" class="tool-btn" onclick="setTool('measure')">📏 Measure</button>
                 <button id="btn-tool-highlight" class="tool-btn" onclick="setTool('highlight')">🟨 Highlight</button>
-                <button id="btn-tool-video" class="tool-btn" onclick="setTool('video')">🎥 Video Path</button>
+                <button id="btn-tool-point" class="tool-btn active" onclick="setTool('point')">📍 Point</button>
+                <button id="btn-tool-video" class="tool-btn" onclick="setTool('video')">🎥 Video</button>
             </div>
 
-            <form id="editor-form">
-                <label>Title: 
-                    <input type="text" id="edit-title" placeholder="Optional title">
-                </label>
-                <label>Comments: 
-                    <textarea id="edit-comments" placeholder="Optional details..."></textarea>
-                </label>
-                <label>Image URL: 
-                    <input type="text" id="edit-url" required placeholder="assets/photos/image.jpg">
-                </label>
-                <label>Photo Type:
-                    <select id="edit-type">
-                        <option value="panorama">360 Panorama</option>
-                        <option value="directional">Standard Photo</option>
-                    </select>
-                </label>
-                <label>Field of View (°): 
-                    <input type="number" id="edit-fov" value="120" min="1" max="360">
-                </label>
-                <button type="submit" style="background: #28a745; color: white; font-weight: bold; margin-top: 5px;">💾 Save Point to Map</button>
-                <button type="button" id="btn-cancel" style="background: #dc3545; color: white;">❌ Cancel Placement</button>
-            </form>
+            <div id="data-group">
+                <form id="editor-form">
+                    <label>Title: <input type="text" id="edit-title" placeholder="Optional title"></label>
+                    <label>Comments: <textarea id="edit-comments" placeholder="Optional details..."></textarea></label>
+                    <label>Image URL: <input type="text" id="edit-url" required placeholder="assets/photos/image.jpg"></label>
+                    <label>Photo Type:
+                        <select id="edit-type">
+                            <option value="panorama">360 Panorama</option>
+                            <option value="directional">Standard Photo</option>
+                        </select>
+                    </label>
+                    <label>Field of View (°): <input type="number" id="edit-fov" value="120" min="1" max="360"></label>
+                    <button type="submit" style="background: #28a745; color: white; font-weight: bold; border: none; padding: 8px; border-radius: 4px; cursor: pointer; margin-top: 5px;">💾 Save Point to Map</button>
+                    <button type="button" id="btn-cancel" style="background: #dc3545; color: white; border: none; padding: 8px; border-radius: 4px; cursor: pointer;">❌ Cancel Placement</button>
+                </form>
 
-            <hr>
+                <hr id="data-divider">
 
-            <div class="session-management">
-                <p>Points Placed This Session: <span id="session-count">0</span></p>
-                <button id="btn-download-batch" style="width: 100%; margin-bottom: 10px; background: #007bff; color: white; font-weight: bold;">📥 Download JSON Data</button>
-                <button id="btn-floor-report" style="width: 100%; background: #17a2b8; color: white; font-weight: bold;">📄 Generate Floor Report</button>
+                <div id="session-management" class="session-management">
+                    <p style="margin-bottom: 10px; font-weight: bold; font-size: 0.9em;">Media Added: <span id="session-count">0</span></p>
+                    <button id="btn-download-batch" style="width: 100%; padding: 10px; background: #007bff; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer;">📥 Download JSON Data</button>
+                </div>
+            </div>
+
+            <div id="report-group" style="display: none; padding: 15px; background: #f8f9fa; border: 1px solid #ddd; border-radius: 5px;">
+                <p style="font-size: 0.9em; color: #555; margin-bottom: 15px; text-align: center;">Use these tools to map physical dimensions or flag zones, then export a key.</p>
+                <button id="btn-floor-report" style="width: 100%; padding: 10px; background: #17a2b8; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer;">📄 Generate Floor Report</button>
             </div>
             
         </div>
