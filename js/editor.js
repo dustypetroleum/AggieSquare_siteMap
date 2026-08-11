@@ -11,6 +11,52 @@ const bodyElement = document.body;
 const sidebarForm = document.getElementById('editor-form');
 const inputFov = document.getElementById('edit-fov');
 
+// Helper: Convert Hex color to RGBA for transparent report overlays
+function hexToRgba(hex, alpha) {
+    const r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16);
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+// Global hook to update highlight data from the side panel
+window.updateHighlight = function(id, field, value) {
+    const hl = highlights.find(h => h.id === id);
+    if (!hl) return;
+    if (field === 'color') {
+        hl.color = value;
+        hl.rect.setStyle({ color: value, fillColor: value });
+    } else if (field === 'comment') {
+        hl.comment = value;
+    }
+};
+
+// Renders the highlight manager UI
+function renderHighlightManager() {
+    const manager = document.getElementById('highlight-manager');
+    const list = document.getElementById('highlight-list');
+    if (!manager || !list) return;
+
+    const currentHighlights = highlights.filter(h => h.map_id === currentMapId);
+    if (currentHighlights.length === 0) {
+        manager.style.display = 'none';
+        return;
+    }
+
+    manager.style.display = 'block';
+    list.innerHTML = '';
+
+    currentHighlights.forEach(h => {
+        const row = document.createElement('div');
+        row.style.cssText = 'display: flex; align-items: center; gap: 8px; background: #fff; padding: 8px; border: 1px solid #ddd; border-radius: 4px;';
+        row.innerHTML = `
+            <strong style="width: 15px; font-size: 0.9em;">${h.id}</strong>
+            <input type="color" value="${h.color}" onchange="updateHighlight(${h.id}, 'color', this.value)" style="width: 25px; height: 25px; border: none; padding: 0; cursor: pointer;" title="Change Color">
+            <input type="text" value="${h.comment}" oninput="updateHighlight(${h.id}, 'comment', this.value)" style="flex: 1; padding: 4px; border: 1px solid #ccc; border-radius: 3px; font-size: 0.9em;" placeholder="Zone Label">
+            <div style="font-size: 0.8em; color: #666; white-space: nowrap;">${h.dimensions}</div>
+        `;
+        list.appendChild(row);
+    });
+}
+
 function generateFloorReport() {
     if (currentMapId === 'overview') return alert("Floor reports are not available for the overview map.");
     const ch = highlights.filter(h => h.map_id === currentMapId); 
@@ -22,12 +68,13 @@ function generateFloorReport() {
     ch.forEach(h => {
         const minLat = Math.min(h.bounds[0].lat, h.bounds[1].lat), maxLat = Math.max(h.bounds[0].lat, h.bounds[1].lat);
         const minLng = Math.min(h.bounds[0].lng, h.bounds[1].lng), maxLng = Math.max(h.bounds[0].lng, h.bounds[1].lng);
-        mapHtml += `<div style="position: absolute; left: ${(minLng / config.bounds[1][1]) * 100}%; bottom: ${(minLat / config.bounds[1][0]) * 100}%; width: ${((maxLng - minLng) / config.bounds[1][1]) * 100}%; height: ${((maxLat - minLat) / config.bounds[1][0]) * 100}%; background-color: rgba(255, 235, 59, 0.4); border: 2px solid #ffeb3b; display: flex; align-items: center; justify-content: center; box-sizing: border-box;"><span style="background: white; color: black; border-radius: 50%; width: 22px; height: 22px; text-align: center; line-height: 22px; font-weight: bold; font-size: 12px; border: 1px solid #333; box-shadow: 0 1px 3px rgba(0,0,0,0.5);">${h.id}</span></div>`;
+        const bgColor = hexToRgba(h.color, 0.4);
+        mapHtml += `<div style="position: absolute; left: ${(minLng / config.bounds[1][1]) * 100}%; bottom: ${(minLat / config.bounds[1][0]) * 100}%; width: ${((maxLng - minLng) / config.bounds[1][1]) * 100}%; height: ${((maxLat - minLat) / config.bounds[1][0]) * 100}%; background-color: ${bgColor}; border: 2px solid ${h.color}; display: flex; align-items: center; justify-content: center; box-sizing: border-box;"><span style="background: white; color: black; border-radius: 50%; width: 22px; height: 22px; text-align: center; line-height: 22px; font-weight: bold; font-size: 12px; border: 1px solid #333; box-shadow: 0 1px 3px rgba(0,0,0,0.5);">${h.id}</span></div>`;
     });
     mapHtml += `</div>`;
 
-    let reportContent = `<div style="font-family: Arial; padding: 20px; max-width: 1000px; margin: 0 auto;"><h1 style="border-bottom: 2px solid #ccc; padding-bottom: 10px;">Floor Report: ${currentMapId}</h1><p style="margin-bottom: 20px;"><strong>Date:</strong> ${new Date().toLocaleDateString()}</p>${mapHtml}<table style="width: 100%; border-collapse: collapse; margin-top: 20px; page-break-before: auto;"><thead><tr style="background: #f2f2f2;"><th style="border: 1px solid #ddd; padding: 12px; width: 50px;">ID</th><th style="border: 1px solid #ddd; padding: 12px; text-align: left;">Notes</th></tr></thead><tbody>`;
-    ch.forEach(x => reportContent += `<tr><td style="border: 1px solid #ddd; padding: 12px; text-align: center;"><strong>${x.id}</strong></td><td style="border: 1px solid #ddd; padding: 12px;">${x.comment}</td></tr>`);
+    let reportContent = `<div style="font-family: Arial; padding: 20px; max-width: 1000px; margin: 0 auto;"><h1 style="border-bottom: 2px solid #ccc; padding-bottom: 10px;">Floor Report: ${currentMapId}</h1><p style="margin-bottom: 20px;"><strong>Date:</strong> ${new Date().toLocaleDateString()}</p>${mapHtml}<table style="width: 100%; border-collapse: collapse; margin-top: 20px; page-break-before: auto;"><thead><tr style="background: #f2f2f2;"><th style="border: 1px solid #ddd; padding: 12px; width: 50px;">ID</th><th style="border: 1px solid #ddd; padding: 12px; width: 150px;">Dimensions</th><th style="border: 1px solid #ddd; padding: 12px; text-align: left;">Notes</th></tr></thead><tbody>`;
+    ch.forEach(x => reportContent += `<tr><td style="border: 1px solid #ddd; padding: 12px; text-align: center; background-color: ${hexToRgba(x.color, 0.2)};"><strong>${x.id}</strong></td><td style="border: 1px solid #ddd; padding: 12px; text-align: center;">${x.dimensions}</td><td style="border: 1px solid #ddd; padding: 12px;">${x.comment}</td></tr>`);
     reportContent += `</tbody></table></div>`;
 
     let printContainer = document.getElementById('print-report-container');
@@ -48,6 +95,7 @@ function initEditor(mapId, bounds) {
     if (mapId === 'overview' && isEditMode) setMode('view');
     resetEditorWorkflow(); 
     measureLayers.clearLayers(); highlightLayers.clearLayers(); highlights = []; highlightCounter = 1;
+    renderHighlightManager();
 
     const btnEdit = document.getElementById('btn-edit'), btnReport = document.getElementById('btn-floor-report');
     if (mapId === 'overview') {
@@ -88,7 +136,7 @@ function setTool(tool) {
     } else if (tool === 'video') {
         mc.style.cursor = 'crosshair';
         if (dataGroup) dataGroup.style.display = 'block';
-        if (form) form.style.display = 'none'; // Video uses prompts, so hide the point form
+        if (form) form.style.display = 'none';
         if (dataDivider) dataDivider.style.display = 'none';
         if (reportGroup) reportGroup.style.display = 'none';
     } else if (tool === 'measure' || tool === 'highlight') {
@@ -162,12 +210,32 @@ map.on('click', (e) => {
     } else if (currentTool === 'highlight') {
         if (!highlightStart) highlightStart = e.latlng;
         else {
-            const bounds = [highlightStart, e.latlng], comment = prompt("Label:") || "No comment", id = highlightCounter++;
-            const rect = L.rectangle(bounds, { color: "#ffeb3b", weight: 1, fillOpacity: 0.1, fillColor: "#ffeb3b" }).addTo(highlightLayers);
+            const bounds = [highlightStart, e.latlng];
+            const id = highlightCounter++;
+            const defaultColor = "#ffeb3b";
+            
+            const wPx = Math.abs(e.latlng.lng - highlightStart.lng);
+            const hPx = Math.abs(e.latlng.lat - highlightStart.lat);
+            const dims = `${formatDistance(wPx)} x ${formatDistance(hPx)}`;
+
+            const rect = L.rectangle(bounds, { color: defaultColor, weight: 1, fillOpacity: 0.1, fillColor: defaultColor }).addTo(highlightLayers);
             const label = L.marker(rect.getBounds().getCenter(), { icon: L.divIcon({ className: 'highlight-label', html: `<div style="background:white; color:black; border-radius:50%; width:22px; height:22px; text-align:center; line-height:22px; font-weight:bold; border:1px solid #333; font-size:12px;">${id}</div>` }) }).addTo(highlightLayers);
-            highlights.push({ id, bounds, comment, map_id: currentMapId, rect, label });
-            rect.on('click', function(evt) { L.DomEvent.stop(evt); if (confirm("Delete this highlight?")) { highlightLayers.removeLayer(rect); highlightLayers.removeLayer(label); highlights = highlights.filter(h => h.id !== id); } });
-            highlightStart = null; if (tempHighlightRect) map.removeLayer(tempHighlightRect);
+            
+            highlights.push({ id, bounds, comment: `Zone ${id}`, color: defaultColor, dimensions: dims, map_id: currentMapId, rect, label });
+            
+            rect.on('click', function(evt) { 
+                L.DomEvent.stop(evt); 
+                if (confirm("Delete this highlight?")) { 
+                    highlightLayers.removeLayer(rect); 
+                    highlightLayers.removeLayer(label); 
+                    highlights = highlights.filter(h => h.id !== id); 
+                    renderHighlightManager();
+                } 
+            });
+            
+            highlightStart = null; 
+            if (tempHighlightRect) map.removeLayer(tempHighlightRect);
+            renderHighlightManager();
         }
     } else if (currentTool === 'video') {
         if (!videoStart) videoStart = e.latlng;
