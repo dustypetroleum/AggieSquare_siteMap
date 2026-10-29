@@ -123,51 +123,63 @@ function createVideoPath(startLatLng, endLatLng, url, title) {
     return group;
 }
 
-// 7. Point Marker Generator (Updated for zoom stability)
+// 7. Point Marker Generator (Fully CSS-Based FOV Cone; updated for stability)
 function createDirectionalMarker(latlng, angle, fov, title, comments, url, type) {
+    const lat = Array.isArray(latlng) ? Number(latlng[0]) : Number(latlng.lat);
+    const lng = Array.isArray(latlng) ? Number(latlng[1]) : Number(latlng.lng);
     const dotColor = type === 'panorama' ? '#28a745' : '#007bff';
     
-    // Create an HTML-based marker to bypass the SVG redraw jumping bug
-    const iconHtml = `<div style="width: 14px; height: 14px; background-color: ${dotColor}; border: 2px solid #fff; border-radius: 50%; box-shadow: 0 1px 3px rgba(0,0,0,0.5); transition: transform 0.2s ease; transform-origin: center;"></div>`;
+    // Map coordinate math to standard CSS clockwise rotation
+    const numFov = Number(fov) || 0;
+    const numAngle = Number(angle) || 0;
+    const cssRotation = 90 - numAngle;
     
+    // Generate the CSS pie slice
+    let fovHtml = '';
+    if (numFov > 0 && numFov < 360) {
+        const startAngle = 360 - (numFov / 2);
+        // Centered inside the 14x14 dot container (100x100 cone shifted by -43px)
+        fovHtml = `<div class="fov-cone" style="position: absolute; top: -43px; left: -43px; width: 100px; height: 100px; border-radius: 50%; background: conic-gradient(from ${startAngle}deg, ${dotColor} ${numFov}deg, transparent 0); transform: rotate(${cssRotation}deg); opacity: 0; transition: opacity 0.2s ease; pointer-events: none;"></div>`;
+    } else if (numFov >= 360) {
+        fovHtml = `<div class="fov-cone" style="position: absolute; top: -43px; left: -43px; width: 100px; height: 100px; border-radius: 50%; background: ${dotColor}; opacity: 0; transition: opacity 0.2s ease; pointer-events: none;"></div>`;
+    }
+    
+    // Package the cone and the dot together into a single element
+    const iconHtml = `
+        <div style="position: relative; width: 14px; height: 14px;">
+            ${fovHtml}
+            <div class="pin-dot" style="position: absolute; top: 0; left: 0; width: 14px; height: 14px; background-color: ${dotColor}; border: 2px solid #fff; border-radius: 50%; box-shadow: 0 1px 3px rgba(0,0,0,0.5); transition: transform 0.2s ease; transform-origin: center; z-index: 2;"></div>
+        </div>
+    `;
+
     const icon = L.divIcon({
         className: 'custom-photo-pin',
         html: iconHtml,
         iconSize: [14, 14],
-        iconAnchor: [7, 7] // perfectly centers the icon
+        iconAnchor: [7, 7]
     });
 
-    const marker = L.marker(latlng, { icon: icon });
-    let hoverPolygon = null;
+    const marker = L.marker([lat, lng], { icon: icon });
 
+    // Handle animations strictly via CSS opacity/scale
     marker.on('mouseover', (e) => {
-        // Trigger visual enlargement via CSS instead of redrawing the shape
-        const div = e.target.getElement().querySelector('div');
-        if (div) div.style.transform = 'scale(1.4)';
-
-        if (fov > 0 && fov < 360) {
-            // Ensure compatibility whether latlng is an Array or Object
-            const lat = Array.isArray(latlng) ? latlng[0] : latlng.lat;
-            const lng = Array.isArray(latlng) ? latlng[1] : latlng.lng;
-            
-            const points = [[lat, lng]];
-            for (let a = angle - (fov/2); a <= angle + (fov/2); a += 5) {
-                points.push([lat + 80 * Math.cos(a * Math.PI / 180), lng + 80 * Math.sin(a * Math.PI / 180)]);
-            }
-            hoverPolygon = L.polygon(points, { color: dotColor, weight: 0.5, fillColor: dotColor, fillOpacity: 0.05, interactive: false }).addTo(markerLayer);
-        }
+        const el = e.target.getElement();
+        const dot = el ? el.querySelector('.pin-dot') : null;
+        const cone = el ? el.querySelector('.fov-cone') : null;
+        if (dot) dot.style.transform = 'scale(1.4)';
+        if (cone) cone.style.opacity = '0.25';
     });
 
     marker.on('mouseout', (e) => { 
-        // Revert CSS size
-        const div = e.target.getElement().querySelector('div');
-        if (div) div.style.transform = 'scale(1)';
-
-        if (hoverPolygon) { markerLayer.removeLayer(hoverPolygon); hoverPolygon = null; } 
+        const el = e.target.getElement();
+        const dot = el ? el.querySelector('.pin-dot') : null;
+        const cone = el ? el.querySelector('.fov-cone') : null;
+        if (dot) dot.style.transform = 'scale(1)';
+        if (cone) cone.style.opacity = '0';
     });
 
     if (url) {
-        marker.bindTooltip(`<div style="text-align: center; width: 200px;"><img src="${url}" style="width: 200px; height: 130px; object-fit: cover; border-radius: 4px; margin-bottom: 5px;" alt="Preview">${title ? `<b style="font-size:0.9em; display:block;">${title}</b>` : ''}</div>`, { direction: 'top', className: 'photo-tooltip', offset: [0, -15] });
+        marker.bindTooltip(`<div style="text-align: center; width: 200px;"><img src="${url}" style="width: 200px; height: 130px; object-fit: cover; border-radius: 4px; margin-bottom: 5px;" alt="Preview">${title ? `<b style="font-size:0.9em; display:block;">${title}</b>` : ''}</div>`, { direction: 'top', className: 'photo-tooltip', offset: [0, -10] });
     }
 
     marker.on('click', () => {
@@ -182,6 +194,7 @@ function createDirectionalMarker(latlng, angle, fov, title, comments, url, type)
             }
         } else openPhotoViewer({ title, comments, url, type, fov }); 
     });
+    
     return marker;
 }
 
