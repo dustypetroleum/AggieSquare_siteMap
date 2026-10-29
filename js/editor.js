@@ -94,13 +94,8 @@ function initEditor(mapId, bounds) {
     currentMapId = mapId; 
     currentMapBounds = bounds; 
     
-    // Default to 'view' on overview, or 'layout' when entering a floor plan
-    if (mapId === 'overview') {
-        setMode('view');
-    } else {
-        setMode('layout');
-    }
-    
+    // Always default to 'view' mode when loading or switching floors
+    setMode('view');
     resetEditorWorkflow(); 
     
     measureLayers.clearLayers(); 
@@ -112,7 +107,6 @@ function initEditor(mapId, bounds) {
         h.label.addTo(highlightLayers);
     });
 
-    // Update the next ID number for this specific floor
     const floorHighlights = highlights.filter(h => h.map_id === currentMapId);
     highlightCounter = floorHighlights.length > 0 ? Math.max(...floorHighlights.map(h => h.id)) + 1 : 1;
 
@@ -168,17 +162,28 @@ function setTool(tool) {
 }
 
 function setMode(mode) {
-    if (mode === 'edit' && currentMapId === 'overview') return;
-    isEditMode = (mode === 'edit');
-    bodyElement.classList.toggle('edit-mode', isEditMode); 
-    bodyElement.classList.toggle('view-mode', !isEditMode);
-    document.getElementById('btn-edit')?.classList.toggle('active', isEditMode);
-    document.getElementById('btn-view')?.classList.toggle('active', !isEditMode);
+    if (mode !== 'view' && currentMapId === 'overview') return alert("Editing is not available on the overview map.");
     
-    // NEW: Force Leaflet to recalculate the map grid after the sidebar animation
+    activeMode = mode;
+    const isEditing = (mode !== 'view');
+    bodyElement.classList.toggle('edit-mode', isEditing); 
+    bodyElement.classList.toggle('view-mode', !isEditing);
+    bodyElement.classList.toggle('layout-mode', mode === 'layout');
+    bodyElement.classList.toggle('point-mode', mode === 'point');
+
+    document.getElementById('btn-view')?.classList.toggle('active', mode === 'view');
+    document.getElementById('btn-layout-edit')?.classList.toggle('active', mode === 'layout');
+    document.getElementById('btn-point-edit')?.classList.toggle('active', mode === 'point');
+    
     setTimeout(() => { if (map) map.invalidateSize(); }, 100);
 
-    if (!isEditMode) resetEditorWorkflow(); else setTool('point');
+    if (mode === 'view') {
+        resetEditorWorkflow();
+    } else if (mode === 'layout') {
+        setTool('highlight'); // Default to layout tools (zones/measurements)
+    } else if (mode === 'point') {
+        setTool('point'); // Default to point/video placement tools
+    }
 }
 
 function formatDistance(px) { return `${Math.floor((px * (mapConfigs[currentMapId]?.scale || 1)) / 12)}' ${Math.round((px * (mapConfigs[currentMapId]?.scale || 1)) % 12)}"`; }
