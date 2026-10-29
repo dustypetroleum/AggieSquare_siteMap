@@ -75,21 +75,24 @@ function loadSavedMarkers(mapId) {
         }).catch(err => console.warn('Marker load skipped.', err));
 }
 
-// 6. Vector Path Generator (With Arrowhead Math)
+// 6. Vector Path Generator (With Array & Object Coordinate Protection)
 function createVideoPath(startLatLng, endLatLng, url, title) {
-    // Basic Trigonometry to calculate the arrow angle
-    const dx = endLatLng.lng - startLatLng.lng;
-    const dy = endLatLng.lat - startLatLng.lat;
+    const sLat = Array.isArray(startLatLng) ? Number(startLatLng[0]) : Number(startLatLng.lat);
+    const sLng = Array.isArray(startLatLng) ? Number(startLatLng[1]) : Number(startLatLng.lng);
+    const eLat = Array.isArray(endLatLng) ? Number(endLatLng[0]) : Number(endLatLng.lat);
+    const eLng = Array.isArray(endLatLng) ? Number(endLatLng[1]) : Number(endLatLng.lng);
+
+    const dx = eLng - sLng;
+    const dy = eLat - sLat;
     const angle = Math.atan2(dy, dx);
     const size = 20; // Pixel size of the arrowhead
 
-    // Project points 30 degrees off the main angle to form the base of the triangle
-    const p1 = [endLatLng.lat, endLatLng.lng];
-    const p2 = [endLatLng.lat - size * Math.sin(angle - Math.PI / 6), endLatLng.lng - size * Math.cos(angle - Math.PI / 6)];
-    const p3 = [endLatLng.lat - size * Math.sin(angle + Math.PI / 6), endLatLng.lng - size * Math.cos(angle + Math.PI / 6)];
+    const p1 = [eLat, eLng];
+    const p2 = [eLat - size * Math.sin(angle - Math.PI / 6), eLng - size * Math.cos(angle - Math.PI / 6)];
+    const p3 = [eLat - size * Math.sin(angle + Math.PI / 6), eLng - size * Math.cos(angle + Math.PI / 6)];
 
     const arrow = L.polygon([p1, p2, p3], {color: '#9c27b0', fillColor: '#9c27b0', fillOpacity: 1, weight: 1});
-    const line = L.polyline([startLatLng, endLatLng], {color: '#9c27b0', weight: 4, opacity: 0.8});
+    const line = L.polyline([[sLat, sLng], [eLat, eLng]], {color: '#9c27b0', weight: 4, opacity: 0.8});
     
     const group = L.featureGroup([line, arrow]);
 
