@@ -93,7 +93,14 @@ function generateFloorReport() {
 function initEditor(mapId, bounds) { 
     currentMapId = mapId; 
     currentMapBounds = bounds; 
-    if (mapId === 'overview' && isEditMode) setMode('view');
+    
+    // Default to 'view' on overview, or 'layout' when entering a floor plan
+    if (mapId === 'overview') {
+        setMode('view');
+    } else {
+        setMode('layout');
+    }
+    
     resetEditorWorkflow(); 
     
     measureLayers.clearLayers(); 
