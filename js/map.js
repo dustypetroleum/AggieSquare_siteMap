@@ -135,7 +135,7 @@ function createDirectionalMarker(latlng, angle, fov, title, comments, url, type)
     // Map coordinate math to standard CSS clockwise rotation
     const numFov = Number(fov) || 0;
     const numAngle = Number(angle) || 0;
-    const cssRotation = 180 - numAngle;
+    const cssRotation = numAngle;
     
     // Generate the CSS pie slice
     let fovHtml = '';
