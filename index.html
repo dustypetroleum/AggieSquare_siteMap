@@ -105,6 +105,26 @@
                 body.layout-mode #sidebar { display: flex; }
                 body.point-mode #sidebar { display: flex; }
                 body.edit-mode #map { cursor: crosshair; }
+         /* Contextual tool visibility based on active mode */
+        body.layout-mode #btn-tool-point,
+        body.layout-mode #btn-tool-video,
+        body.layout-mode #editor-form,
+        body.layout-mode #data-divider,
+        body.layout-mode .session-management {
+            display: none !important;
+        }
+
+        body.layout-mode #report-group,
+        body.layout-mode #highlight-manager {
+            display: block !important;
+        }
+
+        body.point-mode #btn-tool-measure,
+        body.point-mode #btn-tool-highlight,
+        body.point-mode #report-group,
+        body.point-mode #highlight-manager {
+            display: none !important;
+        }
     </style>
 </head>
 <body class="view-mode">

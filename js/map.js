@@ -16,6 +16,7 @@ const overviewZones = [
 ];
 
 const map = L.map('map', { crs: L.CRS.Simple, minZoom: -2, maxZoom: 3, attributionControl: false });
+L.control.scale({ position: 'bottomright', metric: true, imperial: true }).addTo(map);
 let currentImageOverlay, markerLayer = L.layerGroup().addTo(map), viewerInstance = null;
 
 // 3. Switch Floor Plan
