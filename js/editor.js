@@ -149,9 +149,14 @@ function setTool(tool) {
 function setMode(mode) {
     if (mode === 'edit' && currentMapId === 'overview') return;
     isEditMode = (mode === 'edit');
-    bodyElement.classList.toggle('edit-mode', isEditMode); bodyElement.classList.toggle('view-mode', !isEditMode);
+    bodyElement.classList.toggle('edit-mode', isEditMode); 
+    bodyElement.classList.toggle('view-mode', !isEditMode);
     document.getElementById('btn-edit')?.classList.toggle('active', isEditMode);
     document.getElementById('btn-view')?.classList.toggle('active', !isEditMode);
+    
+    // NEW: Force Leaflet to recalculate the map grid after the sidebar animation
+    setTimeout(() => { if (map) map.invalidateSize(); }, 100);
+
     if (!isEditMode) resetEditorWorkflow(); else setTool('point');
 }
 
@@ -219,7 +224,14 @@ map.on('click', (e) => {
             const dims = `${formatDistance(wPx)} x ${formatDistance(hPx)}`;
 
             const rect = L.rectangle(bounds, { color: defaultColor, weight: 1, fillOpacity: 0.1, fillColor: defaultColor }).addTo(highlightLayers);
-            const label = L.marker(rect.getBounds().getCenter(), { icon: L.divIcon({ className: 'highlight-label', html: `<div style="background:white; color:black; border-radius:50%; width:22px; height:22px; text-align:center; line-height:22px; font-weight:bold; border:1px solid #333; font-size:12px;">${id}</div>` }) }).addTo(highlightLayers);
+            const label = L.marker(rect.getBounds().getCenter(), { 
+                icon: L.divIcon({ 
+                    className: 'highlight-label', 
+                    iconSize: [22, 22],      /* NEW: Define the exact size */
+                    iconAnchor: [11, 11],    /* NEW: Anchor it dead-center (half of 22) */
+                    html: `<div style="background:white; color:black; border-radius:50%; width:22px; height:22px; text-align:center; line-height:22px; font-weight:bold; border:1px solid #333; font-size:12px;">${id}</div>` 
+                }) 
+            }).addTo(highlightLayers);
             
             highlights.push({ id, bounds, comment: `Zone ${id}`, color: defaultColor, dimensions: dims, map_id: currentMapId, rect, label });
             

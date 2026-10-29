@@ -9,6 +9,11 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.css">
 
     <style>
+        /* Prevent global CSS from breaking Leaflet's zoom scaling */
+        .leaflet-container img {
+            max-width: none !important;
+            max-height: none !important;
+        }
         /* Base Reset & Variables */
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: Arial, sans-serif; height: 100vh; display: flex; flex-direction: column; overflow: hidden; background: #f4f4f4; }
