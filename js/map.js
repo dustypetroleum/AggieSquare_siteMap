@@ -27,6 +27,22 @@ customScale.onAdd = function () {
 customScale.addTo(map);
 let currentImageOverlay, markerLayer = L.layerGroup().addTo(map), viewerInstance = null;
 
+// 2.5 scalebar scale update on zoom
+function updateScaleBar() {
+    const scaleBar = document.getElementById('dynamic-scale-bar');
+    const config = mapConfigs[currentMapId];
+    if (scaleBar && config && config.scale) {
+        const basePx = 120 / config.scale; // Base pixels for 10 feet
+        const zoomedPx = basePx * Math.pow(2, map.getZoom()); // Adjust for zoom level
+        scaleBar.style.width = `${zoomedPx}px`;
+        scaleBar.innerHTML = '<span style="position:relative; top:-18px; text-shadow: 1px 1px 0 #fff, -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff;">10 ft</span>';
+    }
+}
+
+// Ensure scale bar updates every time the user zooms
+map.on('zoomend', updateScaleBar);
+
+
 // 3. Switch Floor Plan
 function switchMap(mapId) {
     const config = mapConfigs[mapId];
@@ -40,7 +56,8 @@ function switchMap(mapId) {
 
     currentImageOverlay = L.imageOverlay(config.url, config.bounds);
     currentImageOverlay.on('load', () => { 
-        map.fitBounds(config.bounds); 
+        map.fitBounds(config.bounds);
+        updateScaleBar(); // Update scale bar size for the new floor
         if (mapId === 'overview') loadOverviewInteractivity();
         else loadSavedMarkers(mapId); 
     });

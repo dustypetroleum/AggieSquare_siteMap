@@ -1,6 +1,5 @@
 let activeMode = 'view', isEditMode = false;
 let currentMapBounds, currentMapId, currentTool = 'point', placementState = 'none';
-let isEditMode = false, currentMapBounds, currentMapId, currentTool = 'point', placementState = 'none';
 let tempMarker, tempPolygon, sessionMarkers = [], currentAngle = 0, lastTargetLatLng = null;
 let measureStart = null, tempMeasureLine = null;
 let highlightStart = null, tempHighlightRect = null, highlights = [], highlightCounter = 1;
