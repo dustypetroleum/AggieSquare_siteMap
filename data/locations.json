@@ -271,7 +271,7 @@
     "type": "directional",
     "x": 1336,
     "y": 546,
-    "orientation": 0,
+    "orientation": 180,
     "field_of_view": 120,
     "url": "assets/std/PXL_20260401_223943775.jpg"
   },
