@@ -91,10 +91,24 @@ function generateFloorReport() {
 }
 
 function initEditor(mapId, bounds) { 
-    currentMapId = mapId; currentMapBounds = bounds; 
+    currentMapId = mapId; 
+    currentMapBounds = bounds; 
     if (mapId === 'overview' && isEditMode) setMode('view');
     resetEditorWorkflow(); 
-    measureLayers.clearLayers(); highlightLayers.clearLayers(); highlights = []; highlightCounter = 1;
+    
+    measureLayers.clearLayers(); 
+    highlightLayers.clearLayers(); 
+
+    // Re-display existing highlights for the selected floor
+    highlights.filter(h => h.map_id === currentMapId).forEach(h => {
+        h.rect.addTo(highlightLayers);
+        h.label.addTo(highlightLayers);
+    });
+
+    // Update the next ID number for this specific floor
+    const floorHighlights = highlights.filter(h => h.map_id === currentMapId);
+    highlightCounter = floorHighlights.length > 0 ? Math.max(...floorHighlights.map(h => h.id)) + 1 : 1;
+
     renderHighlightManager();
 
     const btnEdit = document.getElementById('btn-edit'), btnReport = document.getElementById('btn-floor-report');

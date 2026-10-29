@@ -258,3 +258,36 @@ document.addEventListener('DOMContentLoaded', () => {
     
     switchMap('overview');
 });
+
+// 10. Close photo modal on keyboard 'Escape' press
+function closePhotoModal() {
+    const modal = document.getElementById('photo-modal');
+    const container = document.getElementById('viewer-container');
+    if (modal) modal.classList.add('modal-hidden');
+    if (container) container.innerHTML = ''; // Stops YouTube video playback immediately
+    if (viewerInstance) { viewerInstance.destroy(); viewerInstance = null; }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('close-modal')?.addEventListener('click', closePhotoModal);
+    document.getElementById('photo-modal')?.addEventListener('click', (e) => {
+        if (e.target.id === 'photo-modal') closePhotoModal();
+    });
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') closePhotoModal();
+    });
+});
+
+//11. scale bar and reset view control
+const resetViewControl = L.control({ position: 'topleft' });
+resetViewControl.onAdd = function () {
+    const btn = L.DomUtil.create('button', 'reset-view-btn');
+    btn.innerHTML = '🎯 Fit Map';
+    btn.style.cssText = 'background: white; border: 2px solid rgba(0,0,0,0.2); border-radius: 4px; padding: 6px 10px; font-weight: bold; cursor: pointer; box-shadow: 0 1px 5px rgba(0,0,0,0.2);';
+    btn.onclick = (e) => {
+        L.DomEvent.stopPropagation(e);
+        if (currentMapBounds) map.fitBounds(currentMapBounds);
+    };
+    return btn;
+};
+resetViewControl.addTo(map);
