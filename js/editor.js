@@ -198,7 +198,7 @@ function drawDynamicFov(tll) {
     const pts = [c];
     const halfFov = parseInt(inputFov.value) / 2;
     for (let a = currentAngle - halfFov; a <= currentAngle + halfFov; a += 2) {
-        const radAngle = a * (Math.PI / 180);
+        const radAngle = -a * (Math.PI / 180);
         // Corrected mapping: Latitude (y) uses cos, Longitude (x) uses sin for proper screen tracking
         pts.push([
             c.lat + rad * Math.sin(radAngle), 
