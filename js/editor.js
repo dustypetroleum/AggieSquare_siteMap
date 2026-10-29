@@ -48,11 +48,15 @@ function renderHighlightManager() {
     currentHighlights.forEach(h => {
         const row = document.createElement('div');
         row.style.cssText = 'display: flex; align-items: center; gap: 8px; background: #fff; padding: 8px; border: 1px solid #ddd; border-radius: 4px;';
+        
+        // Wrapped the input and dimensions into a flex column to prevent horizontal overflow
         row.innerHTML = `
-            <strong style="width: 15px; font-size: 0.9em;">${h.id}</strong>
-            <input type="color" value="${h.color}" onchange="updateHighlight(${h.id}, 'color', this.value)" style="width: 25px; height: 25px; border: none; padding: 0; cursor: pointer;" title="Change Color">
-            <input type="text" value="${h.comment}" oninput="updateHighlight(${h.id}, 'comment', this.value)" style="flex: 1; padding: 4px; border: 1px solid #ccc; border-radius: 3px; font-size: 0.9em;" placeholder="Zone Label">
-            <div style="font-size: 0.8em; color: #666; white-space: nowrap;">${h.dimensions}</div>
+            <strong style="width: 15px; font-size: 0.9em; flex-shrink: 0;">${h.id}</strong>
+            <input type="color" value="${h.color}" onchange="updateHighlight(${h.id}, 'color', this.value)" style="width: 25px; height: 25px; border: none; padding: 0; cursor: pointer; flex-shrink: 0;" title="Change Color">
+            <div style="display: flex; flex-direction: column; flex: 1; min-width: 0; gap: 2px;">
+                <input type="text" value="${h.comment}" oninput="updateHighlight(${h.id}, 'comment', this.value)" style="width: 100%; padding: 4px; border: 1px solid #ccc; border-radius: 3px; font-size: 0.9em;" placeholder="Zone Label">
+                <span style="font-size: 0.75em; color: #666; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${h.dimensions}</span>
+            </div>
         `;
         list.appendChild(row);
     });
@@ -64,6 +68,42 @@ function generateFloorReport() {
     if (ch.length === 0) return alert("No highlights exist on this floor.");
 
     const config = mapConfigs[currentMapId];
+    
+    // --- 1. VECTOR EXPORT (SVG for Adobe Illustrator) ---
+    const mapW = config.bounds[1][1];
+    const mapH = config.bounds[1][0];
+    const absUrl = new URL(config.url, document.baseURI).href; 
+    
+    let svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${mapW} ${mapH}" width="${mapW}" height="${mapH}">`;
+    svg += `<image href="${absUrl}" x="0" y="0" width="${mapW}" height="${mapH}" />`;
+
+    ch.forEach(h => {
+        const minLat = Math.min(h.bounds[0].lat, h.bounds[1].lat), maxLat = Math.max(h.bounds[0].lat, h.bounds[1].lat);
+        const minLng = Math.min(h.bounds[0].lng, h.bounds[1].lng), maxLng = Math.max(h.bounds[0].lng, h.bounds[1].lng);
+
+        const x = minLng, rectW = maxLng - minLng, rectH = maxLat - minLat;
+        const y = mapH - maxLat; 
+
+        const cx = x + rectW / 2, cy = y + rectH / 2;
+
+        svg += `<rect x="${x}" y="${y}" width="${rectW}" height="${rectH}" fill="${h.color}" fill-opacity="0.4" stroke="${h.color}" stroke-width="2" />`;
+        svg += `<circle cx="${cx}" cy="${cy}" r="11" fill="white" stroke="#333" stroke-width="1" />`;
+        svg += `<text x="${cx}" y="${cy}" font-family="Arial" font-size="12" font-weight="bold" fill="black" text-anchor="middle" dominant-baseline="central" alignment-baseline="middle">${h.id}</text>`;
+    });
+    svg += `</svg>`;
+
+    // Trigger SVG Download
+    const blob = new Blob([svg], { type: 'image/svg+xml;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Vector_Floor_Report_${currentMapId}.svg`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+
+    // --- 2. AUTOMATIC PDF EXPORT (html2pdf.js) ---
     let mapHtml = `<div style="position: relative; width: 100%; max-width: 800px; margin: 0 auto 20px auto; border: 1px solid #ccc; page-break-inside: avoid;"><img src="${config.url}" style="width: 100%; display: block;">`;
 
     ch.forEach(h => {
@@ -78,17 +118,23 @@ function generateFloorReport() {
     ch.forEach(x => reportContent += `<tr><td style="border: 1px solid #ddd; padding: 12px; text-align: center; background-color: ${hexToRgba(x.color, 0.2)};"><strong>${x.id}</strong></td><td style="border: 1px solid #ddd; padding: 12px; text-align: center;">${x.dimensions}</td><td style="border: 1px solid #ddd; padding: 12px;">${x.comment}</td></tr>`);
     reportContent += `</tbody></table></div>`;
 
-    let printContainer = document.getElementById('print-report-container');
-    if (!printContainer) {
-        printContainer = document.createElement('div');
-        printContainer.id = 'print-report-container';
-        document.body.appendChild(printContainer);
-        const style = document.createElement('style');
-        style.innerHTML = `@media print { body > *:not(#print-report-container) { display: none !important; } #print-report-container { display: block !important; position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 0; } * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; } } @media screen { #print-report-container { display: none !important; } }`;
-        document.head.appendChild(style);
-    }
+    // Create a temporary off-screen container for html2pdf
+    let printContainer = document.createElement('div');
     printContainer.innerHTML = reportContent;
-    setTimeout(() => window.print(), 500);
+
+    if (typeof html2pdf !== 'undefined') {
+        const opt = {
+            margin:       0.5,
+            filename:     `Floor_Report_${currentMapId}.pdf`,
+            image:        { type: 'jpeg', quality: 0.98 },
+            html2canvas:  { scale: 2, useCORS: true },
+            jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+        };
+        // Generate and download the PDF
+        html2pdf().set(opt).from(printContainer).save();
+    } else {
+        alert("PDF generator library is not loaded. Please ensure html2pdf.js is included in your index.html.");
+    }
 }
 
 function initEditor(mapId, bounds) { 
