@@ -187,7 +187,8 @@ function drawDynamicFov(tll) {
     const rad = Math.max(30, Math.sqrt(dx * dx + dy * dy));
     
     // Direct angle calculation
-    currentAngle = Math.round((Math.atan2(-dy, dx) * (180 / Math.PI) + 360) % 360);
+    const rawAngle = Math.atan2(-dy, dx) * (180 / Math.PI);
+    currentAngle = Math.round((rawAngle + 360) % 360);
 
     if (parseInt(inputFov.value) >= 360) {
         tempPolygon = L.circle(c, { radius: rad, color: '#ffc107', fillOpacity: 0.4, weight: 2, interactive: false }).addTo(map);
@@ -200,8 +201,8 @@ function drawDynamicFov(tll) {
         const radAngle = a * (Math.PI / 180);
         // Corrected mapping: Latitude (y) uses cos, Longitude (x) uses sin for proper screen tracking
         pts.push([
-            c.lat + rad * Math.cos(radAngle), 
-            c.lng + rad * Math.sin(radAngle)
+            c.lat + rad * Math.sin(radAngle), 
+            c.lng + rad * Math.cos(radAngle)
         ]);
     }
     tempPolygon = L.polygon(pts, { color: '#ffc107', fillOpacity: 0.4, weight: 2, interactive: false }).addTo(map);
