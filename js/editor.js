@@ -187,7 +187,7 @@ function drawDynamicFov(tll) {
     const rad = Math.max(30, Math.sqrt(dx * dx + dy * dy));
     
     // Direct angle calculation
-    currentAngle = Math.round((Math.atan2(dy, dx) * (180 / Math.PI) + 360) % 360);
+    currentAngle = Math.round((Math.atan2(-dy, dx) * (180 / Math.PI) + 360) % 360);
 
     if (parseInt(inputFov.value) >= 360) {
         tempPolygon = L.circle(c, { radius: rad, color: '#ffc107', fillOpacity: 0.4, weight: 2, interactive: false }).addTo(map);
