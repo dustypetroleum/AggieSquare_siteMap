@@ -100,7 +100,11 @@
         }
 
         /* Automatically hide the legend when Edit Mode is active */
-        body.edit-mode .map-legend { display: none; }
+        /* View Mode vs Edit Modes */
+                body.view-mode #sidebar { display: none; }
+                body.layout-mode #sidebar { display: flex; }
+                body.point-mode #sidebar { display: flex; }
+                body.edit-mode #map { cursor: crosshair; }
     </style>
 </head>
 <body class="view-mode">
@@ -116,9 +120,10 @@
                 <option value="lvl2-social">Level 2, Social Lab</option>
                 
             </select>
-            <div class="mode-toggles">
-                <button id="btn-view" class="active">View Mode</button>
-                <button id="btn-edit">Edit Mode</button>
+    <div class="mode-toggles" style="display: flex; gap: 5px;">
+                <button id="btn-view" class="active" onclick="setMode('view')">View Mode</button>
+                <button id="btn-layout-edit" onclick="setMode('layout')">Layout Editor</button>
+                <button id="btn-point-edit" onclick="setMode('point')">Point Editor</button>
             </div>
         </div>
     </div>
