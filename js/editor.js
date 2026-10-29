@@ -176,13 +176,33 @@ function setMode(mode) {
 
 function formatDistance(px) { return `${Math.floor((px * (mapConfigs[currentMapId]?.scale || 1)) / 12)}' ${Math.round((px * (mapConfigs[currentMapId]?.scale || 1)) % 12)}"`; }
 
+// Corrected Dynamic FOV Drawing Loop
 function drawDynamicFov(tll) {
-    if (!tempMarker || !tll) return; if (tempPolygon) map.removeLayer(tempPolygon);
-    const c = tempMarker.getLatLng(), dx = tll.lng - c.lng, dy = tll.lat - c.lat, rad = Math.max(30, Math.sqrt(dx*dx + dy*dy));
-    currentAngle = Math.round((Math.atan2(dy, dx) * 180 / Math.PI + 360) % 360);
-    if (parseInt(inputFov.value) >= 360) { tempPolygon = L.circle(c, { radius: rad, color: '#ffc107', fillOpacity: 0.4, weight: 2, interactive: false }).addTo(map); return; }
+    if (!tempMarker || !tll) return; 
+    if (tempPolygon) map.removeLayer(tempPolygon);
+    
+    const c = tempMarker.getLatLng();
+    const dx = tll.lng - c.lng;
+    const dy = tll.lat - c.lat;
+    const rad = Math.max(30, Math.sqrt(dx * dx + dy * dy));
+    
+    // Direct angle calculation matching simple numAngle usage
+    currentAngle = Math.round((Math.atan2(dy, dx) * (180 / Math.PI) + 360) % 360);
+
+    if (parseInt(inputFov.value) >= 360) {
+        tempPolygon = L.circle(c, { radius: rad, color: '#ffc107', fillOpacity: 0.4, weight: 2, interactive: false }).addTo(map);
+        return;
+    }
+
     const pts = [c];
-    for (let a = currentAngle - (parseInt(inputFov.value) / 2); a <= currentAngle + (parseInt(inputFov.value) / 2); a += 2) pts.push([c.lat + rad * Math.cos(a * Math.PI / 180), c.lng + rad * Math.sin(a * Math.PI / 180)]);
+    const halfFov = parseInt(inputFov.value) / 2;
+    for (let a = currentAngle - halfFov; a <= currentAngle + halfFov; a += 2) {
+        const radAngle = a * (Math.PI / 180);
+        pts.push([
+            c.lat + rad * Math.sin(radAngle), 
+            c.lng + rad * Math.cos(radAngle)
+        ]);
+    }
     tempPolygon = L.polygon(pts, { color: '#ffc107', fillOpacity: 0.4, weight: 2, interactive: false }).addTo(map);
 }
 
