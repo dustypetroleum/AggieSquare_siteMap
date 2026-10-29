@@ -16,7 +16,15 @@ const overviewZones = [
 ];
 
 const map = L.map('map', { crs: L.CRS.Simple, minZoom: -2, maxZoom: 3, attributionControl: false });
-L.control.scale({ position: 'bottomright', metric: true, imperial: true }).addTo(map);
+// Custom Scale Bar for flat pixel maps
+const customScale = L.control({ position: 'bottomright' });
+customScale.onAdd = function () {
+    const div = L.DomUtil.create('div', 'custom-scale-bar');
+    div.id = 'dynamic-scale-bar';
+    div.style.cssText = 'background: rgba(255,255,255,0.9); height: 6px; border-bottom: 2px solid #333; border-left: 2px solid #333; border-right: 2px solid #333; font-size: 12px; font-weight: bold; text-align: center; margin-bottom: 15px; margin-right: 15px; box-shadow: 0 1px 4px rgba(0,0,0,0.4); pointer-events: none;';
+    return div;
+};
+customScale.addTo(map);
 let currentImageOverlay, markerLayer = L.layerGroup().addTo(map), viewerInstance = null;
 
 // 3. Switch Floor Plan
@@ -37,6 +45,13 @@ function switchMap(mapId) {
         else loadSavedMarkers(mapId); 
     });
     currentImageOverlay.on('error', () => alert(`Error: Floorplan not found at ${config.url}`));
+    // Update the custom scale bar size (10 feet = 120 inches)
+    const scaleBar = document.getElementById('dynamic-scale-bar');
+    if (scaleBar && config.scale) {
+        const pxWidth = 120 / config.scale; 
+        scaleBar.style.width = `${pxWidth}px`;
+        scaleBar.innerHTML = '<span style="position:relative; top:-18px; text-shadow: 1px 1px 0 #fff, -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff;">10 ft</span>';
+    }
     currentImageOverlay.addTo(map);
 
     if (typeof initEditor === 'function') initEditor(mapId, config.bounds);

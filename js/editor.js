@@ -1,3 +1,5 @@
+let activeMode = 'view', isEditMode = false;
+let currentMapBounds, currentMapId, currentTool = 'point', placementState = 'none';
 let isEditMode = false, currentMapBounds, currentMapId, currentTool = 'point', placementState = 'none';
 let tempMarker, tempPolygon, sessionMarkers = [], currentAngle = 0, lastTargetLatLng = null;
 let measureStart = null, tempMeasureLine = null;
@@ -165,9 +167,10 @@ function setMode(mode) {
     if (mode !== 'view' && currentMapId === 'overview') return alert("Editing is not available on the overview map.");
     
     activeMode = mode;
-    const isEditing = (mode !== 'view');
-    bodyElement.classList.toggle('edit-mode', isEditing); 
-    bodyElement.classList.toggle('view-mode', !isEditing);
+    isEditMode = (mode !== 'view'); // CRITICAL FIX: Re-enables map click events
+    
+    bodyElement.classList.toggle('edit-mode', isEditMode); 
+    bodyElement.classList.toggle('view-mode', !isEditMode);
     bodyElement.classList.toggle('layout-mode', mode === 'layout');
     bodyElement.classList.toggle('point-mode', mode === 'point');
 
@@ -180,9 +183,9 @@ function setMode(mode) {
     if (mode === 'view') {
         resetEditorWorkflow();
     } else if (mode === 'layout') {
-        setTool('highlight'); // Default to layout tools (zones/measurements)
+        setTool('highlight'); 
     } else if (mode === 'point') {
-        setTool('point'); // Default to point/video placement tools
+        setTool('point'); 
     }
 }
 
