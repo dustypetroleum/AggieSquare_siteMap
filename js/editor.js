@@ -90,6 +90,22 @@ function generateFloorReport() {
         svg += `<circle cx="${cx}" cy="${cy}" r="11" fill="white" stroke="#333" stroke-width="1" />`;
         svg += `<text x="${cx}" y="${cy}" font-family="Arial" font-size="12" font-weight="bold" fill="black" text-anchor="middle" dominant-baseline="central" alignment-baseline="middle">${h.id}</text>`;
     });
+    // --- ADD SCALE BAR TO SVG ---
+    if (config.scale) {
+        const scalePx = 120 / config.scale; // 120 inches = 10 ft
+        const sbX = mapW - scalePx - 30;    // 30px padding from the right edge
+        const sbY = mapH - 30;              // 30px padding from the bottom edge
+        
+        svg += `<g id="scale-bar">`;
+        // White background box for contrast
+        svg += `<rect x="${sbX - 15}" y="${sbY - 25}" width="${scalePx + 30}" height="40" fill="white" fill-opacity="0.9" rx="4" />`;
+        // Scale bar tick marks and line
+        svg += `<path d="M ${sbX} ${sbY - 5} L ${sbX} ${sbY} L ${sbX + scalePx} ${sbY} L ${sbX + scalePx} ${sbY - 5}" stroke="#333" stroke-width="3" fill="none" />`;
+        // 10 ft text label
+        svg += `<text x="${sbX + scalePx / 2}" y="${sbY - 10}" font-family="Arial" font-size="14" font-weight="bold" fill="#333" text-anchor="middle">10 ft</text>`;
+        svg += `</g>`;
+    }
+
     svg += `</svg>`;
 
     // Trigger SVG Download
