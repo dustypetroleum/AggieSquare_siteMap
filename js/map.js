@@ -123,22 +123,48 @@ function createVideoPath(startLatLng, endLatLng, url, title) {
     return group;
 }
 
-// 7. Point Marker Generator
+// 7. Point Marker Generator (Updated for zoom stability)
 function createDirectionalMarker(latlng, angle, fov, title, comments, url, type) {
     const dotColor = type === 'panorama' ? '#28a745' : '#007bff';
-    const marker = L.circleMarker(latlng, { radius: 6, color: '#fff', weight: 2, fillColor: dotColor, fillOpacity: 0.9 });
-    let hoverPolygon = null;
-
-    marker.on('mouseover', () => {
-        if (fov > 0 && fov < 360) {
-            const points = [latlng];
-            for (let a = angle - (fov/2); a <= angle + (fov/2); a += 5) points.push([latlng[0] + 80 * Math.cos(a * Math.PI / 180), latlng[1] + 80 * Math.sin(a * Math.PI / 180)]);
-            hoverPolygon = L.polygon(points, { color: dotColor, weight: 0.5, fillColor: dotColor, fillOpacity: 0.05, interactive: false }).addTo(markerLayer);
-        }
-        marker.setRadius(8);
+    
+    // Create an HTML-based marker to bypass the SVG redraw jumping bug
+    const iconHtml = `<div style="width: 14px; height: 14px; background-color: ${dotColor}; border: 2px solid #fff; border-radius: 50%; box-shadow: 0 1px 3px rgba(0,0,0,0.5); transition: transform 0.2s ease; transform-origin: center;"></div>`;
+    
+    const icon = L.divIcon({
+        className: 'custom-photo-pin',
+        html: iconHtml,
+        iconSize: [14, 14],
+        iconAnchor: [7, 7] // perfectly centers the icon
     });
 
-    marker.on('mouseout', () => { if (hoverPolygon) { markerLayer.removeLayer(hoverPolygon); hoverPolygon = null; } marker.setRadius(6); });
+    const marker = L.marker(latlng, { icon: icon });
+    let hoverPolygon = null;
+
+    marker.on('mouseover', (e) => {
+        // Trigger visual enlargement via CSS instead of redrawing the shape
+        const div = e.target.getElement().querySelector('div');
+        if (div) div.style.transform = 'scale(1.4)';
+
+        if (fov > 0 && fov < 360) {
+            // Ensure compatibility whether latlng is an Array or Object
+            const lat = Array.isArray(latlng) ? latlng[0] : latlng.lat;
+            const lng = Array.isArray(latlng) ? latlng[1] : latlng.lng;
+            
+            const points = [[lat, lng]];
+            for (let a = angle - (fov/2); a <= angle + (fov/2); a += 5) {
+                points.push([lat + 80 * Math.cos(a * Math.PI / 180), lng + 80 * Math.sin(a * Math.PI / 180)]);
+            }
+            hoverPolygon = L.polygon(points, { color: dotColor, weight: 0.5, fillColor: dotColor, fillOpacity: 0.05, interactive: false }).addTo(markerLayer);
+        }
+    });
+
+    marker.on('mouseout', (e) => { 
+        // Revert CSS size
+        const div = e.target.getElement().querySelector('div');
+        if (div) div.style.transform = 'scale(1)';
+
+        if (hoverPolygon) { markerLayer.removeLayer(hoverPolygon); hoverPolygon = null; } 
+    });
 
     if (url) {
         marker.bindTooltip(`<div style="text-align: center; width: 200px;"><img src="${url}" style="width: 200px; height: 130px; object-fit: cover; border-radius: 4px; margin-bottom: 5px;" alt="Preview">${title ? `<b style="font-size:0.9em; display:block;">${title}</b>` : ''}</div>`, { direction: 'top', className: 'photo-tooltip', offset: [0, -15] });
