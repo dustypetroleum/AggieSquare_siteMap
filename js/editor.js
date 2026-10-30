@@ -262,8 +262,8 @@ function drawDynamicFov(tll) {
     const dy = tll.lat - c.lat;
     const rad = Math.max(30, Math.sqrt(dx * dx + dy * dy));
     
-    // Direct angle calculation
-    const rawAngle = Math.atan2(-dy, dx) * (180 / Math.PI);
+    // Fixed: Removed the negative sign on dy so North maps properly to 90 degrees
+    const rawAngle = Math.atan2(dy, dx) * (180 / Math.PI);
     currentAngle = Math.round((rawAngle + 360) % 360);
 
     if (parseInt(inputFov.value) >= 360) {
@@ -274,8 +274,8 @@ function drawDynamicFov(tll) {
     const pts = [c];
     const halfFov = parseInt(inputFov.value) / 2;
     for (let a = currentAngle - halfFov; a <= currentAngle + halfFov; a += 2) {
-        const radAngle = -a * (Math.PI / 180);
-        // Corrected mapping: Latitude (y) uses cos, Longitude (x) uses sin for proper screen tracking
+        // Fixed: Removed the negative sign on a
+        const radAngle = a * (Math.PI / 180);
         pts.push([
             c.lat + rad * Math.sin(radAngle), 
             c.lng + rad * Math.cos(radAngle)
@@ -283,7 +283,6 @@ function drawDynamicFov(tll) {
     }
     tempPolygon = L.polygon(pts, { color: '#ffc107', fillOpacity: 0.4, weight: 2, interactive: false }).addTo(map);
 }
-
 document.addEventListener('DOMContentLoaded', () => { 
     measureLayers.addTo(map); highlightLayers.addTo(map); 
     document.getElementById('btn-edit')?.addEventListener('click', () => setMode('edit'));
