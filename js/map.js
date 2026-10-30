@@ -170,14 +170,14 @@ function createDirectionalMarker(latlng, angle, fov, title, comments, url, type)
     const numAngle = Number(angle) || 0;
     const cssRotation = 90 - numAngle;
     
-    // Generate the CSS pie slice
+    // Generate the CSS pie slice with a resting opacity of 0.15
     let fovHtml = '';
     if (numFov > 0 && numFov < 360) {
         const startAngle = 360 - (numFov / 2);
         // Centered inside the 14x14 dot container (100x100 cone shifted by -43px)
-        fovHtml = `<div class="fov-cone" style="position: absolute; top: -43px; left: -43px; width: 100px; height: 100px; border-radius: 50%; background: conic-gradient(from ${startAngle}deg, ${dotColor} ${numFov}deg, transparent 0); transform: rotate(${cssRotation}deg); opacity: 0; transition: opacity 0.2s ease; pointer-events: none;"></div>`;
+        fovHtml = `<div class="fov-cone" style="position: absolute; top: -43px; left: -43px; width: 100px; height: 100px; border-radius: 50%; background: conic-gradient(from ${startAngle}deg, ${dotColor} ${numFov}deg, transparent 0); transform: rotate(${cssRotation}deg); opacity: 0.15; transition: opacity 0.2s ease; pointer-events: none;"></div>`;
     } else if (numFov >= 360) {
-        fovHtml = `<div class="fov-cone" style="position: absolute; top: -43px; left: -43px; width: 100px; height: 100px; border-radius: 50%; background: ${dotColor}; opacity: 0; transition: opacity 0.2s ease; pointer-events: none;"></div>`;
+        fovHtml = `<div class="fov-cone" style="position: absolute; top: -43px; left: -43px; width: 100px; height: 100px; border-radius: 50%; background: ${dotColor}; opacity: 0.15; transition: opacity 0.2s ease; pointer-events: none;"></div>`;
     }
     
     // Package the cone and the dot together into a single element
@@ -197,21 +197,22 @@ function createDirectionalMarker(latlng, angle, fov, title, comments, url, type)
 
     const marker = L.marker([lat, lng], { icon: icon });
 
-    // Handle animations strictly via CSS opacity/scale
+    // Handle animations strictly via CSS opacity/scale (brightens to 0.4 on hover)
     marker.on('mouseover', (e) => {
         const el = e.target.getElement();
         const dot = el ? el.querySelector('.pin-dot') : null;
         const cone = el ? el.querySelector('.fov-cone') : null;
         if (dot) dot.style.transform = 'scale(1.4)';
-        if (cone) cone.style.opacity = '0.25';
+        if (cone) cone.style.opacity = '0.4';
     });
 
+    // Returns to resting opacity of 0.15 on mouseout
     marker.on('mouseout', (e) => { 
         const el = e.target.getElement();
         const dot = el ? el.querySelector('.pin-dot') : null;
         const cone = el ? el.querySelector('.fov-cone') : null;
         if (dot) dot.style.transform = 'scale(1)';
-        if (cone) cone.style.opacity = '0';
+        if (cone) cone.style.opacity = '0.15';
     });
 
     if (url) {
